@@ -22,8 +22,9 @@ SimChess is a unique twist on traditional chess where both players submit their 
 When both players' moves interact, the following rules apply:
 
 - **Mutual Capture**: If both pieces try to capture each other, both are removed
-- **Square Collision**: If both pieces move to the same square, the higher-value piece wins
+- **Square Collision**: If both pieces move to the same square, the **lower-value piece wins**
   - Piece values: Pawn (1), Knight (3), Bishop (3), Rook (5), Queen (9), King (100)
+  - Example: A pawn beats a queen in a collision!
   - If same value, both pieces are removed
 - **Normal Capture**: If one piece captures an opponent's piece that isn't moving, standard capture applies
 

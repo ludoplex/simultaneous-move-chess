@@ -194,12 +194,14 @@ class SimChess {
                 result.conflicts.push('Collision - both pieces removed');
                 this.board[whiteMove.fromRow][whiteMove.fromCol] = null;
                 this.board[blackMove.fromRow][blackMove.fromCol] = null;
-            } else if (whiteValue > blackValue) {
+            } else if (whiteValue < blackValue) {
+                // Lower value piece wins - White has lower value
                 result.conflicts.push('Collision - Black piece removed, White moves');
                 this.board[blackMove.fromRow][blackMove.fromCol] = null;
                 this.board[whiteMove.toRow][whiteMove.toCol] = whitePiece;
                 this.board[whiteMove.fromRow][whiteMove.fromCol] = null;
             } else {
+                // Lower value piece wins - Black has lower value
                 result.conflicts.push('Collision - White piece removed, Black moves');
                 this.board[whiteMove.fromRow][whiteMove.fromCol] = null;
                 this.board[blackMove.toRow][blackMove.toCol] = blackPiece;
