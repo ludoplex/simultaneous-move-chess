@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimChess - Simultaneous Move Chess</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d0d1a 100%);
+            min-height: 100vh;
+        }
+        
+        .font-display { font-family: 'Orbitron', monospace; }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glow {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+        
+        .chess-pattern {
+            background-image: 
+                linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,255,255,0.02) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.02) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.02) 75%);
+            background-size: 40px 40px;
+            background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+        }
+        
+        .stat-card, .game-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover, .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.2);
+        }
+        
+        .match-row {
+            transition: all 0.2s ease;
+        }
+        
+        .match-row:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Chess Board Styles */
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0;
+            border: 4px solid rgba(99, 102, 241, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+        }
+        
+        .chess-square {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .chess-square.light {
+            background: linear-gradient(135deg, #e8e0d5 0%, #d4c8b8 100%);
+        }
+        
+        .chess-square.dark {
+            background: linear-gradient(135deg, #7c9a6e 0%, #5d7a4e 100%);
+        }
+        
+        .chess-square.selected {
+            box-shadow: inset 0 0 0 4px #fbbf24;
+        }
+        
+        .chess-square.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            background: rgba(34, 197, 94, 0.6);
+            border-radius: 50%;
+        }
+        
+        .chess-square.valid-capture::after {
+            content: '';
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border: 4px solid rgba(239, 68, 68, 0.7);
+            border-radius: 50%;
+        }
+        
+        .chess-square.last-move {
+            background: rgba(251, 191, 36, 0.4) !important;
+        }
+        
+        .chess-square.move-submitted {
+            background: rgba(99, 102, 241, 0.4) !important;
+        }
+        
+        .chess-piece {
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            user-select: none;
+            transition: transform 0.1s ease;
+        }
+        
+        .chess-piece.white {
+            filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+        }
+        
+        .chess-piece.black {
+            filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3));
+        }
+        
+        .thinking-indicator {
+            animation: thinking 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes thinking {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .move-arrow {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="text-white chess-pattern">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="loader mx-auto mb-4"></div>
+            <p class="text-gray-400">Loading SimChess...</p>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-10 max-w-md w-full text-center glow">
+            <div class="mb-8">
+                <div class="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-chess-knight text-4xl"></i>
+                </div>
+                <h1 class="font-display text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                    SimChess
+                </h1>
+                <p class="text-gray-400 mt-2">Simultaneous Move Chess</p>
+            </div>
+            
+            <div class="glass rounded-xl p-6 mb-6 text-left">
+                <h3 class="font-semibold text-indigo-300 mb-2"><i class="fas fa-info-circle mr-2"></i>What is SimChess?</h3>
+                <p class="text-sm text-gray-400">A strategic chess variant where both players move simultaneously without seeing each other's moves. Think 24 steps ahead to outmaneuver your opponent!</p>
+            </div>
+            
+            <button id="loginBtn" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl font-semibold text-lg hover:from-indigo-500 hover:to-purple-500 transition-all pulse-ring">
+                <i class="fas fa-sign-in-alt mr-2"></i>Sign In with Puter
+            </button>
+            
+            <p class="text-gray-500 text-sm mt-4">Your data is securely stored in your Puter cloud</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-chess-knight"></i>
+                    </div>
+                    <span class="font-display font-bold text-xl hidden sm:block">SimChess</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 px-3 py-1 bg-yellow-500/20 rounded-lg">
+                        <i class="fas fa-star text-yellow-400"></i>
+                        <span id="playerRating" class="font-semibold">1200</span>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-semibold" id="displayName">Player</p>
+                        <p class="text-xs text-gray-400" id="userEmail">Loading...</p>
+                    </div>
+                    <button id="logoutBtn" class="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Logout">
+                        <i class="fas fa-sign-out-alt text-gray-400 hover:text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="max-w-7xl mx-auto px-4 py-4">
+            <div class="glass rounded-xl p-1 flex gap-1">
+                <button class="tab-btn active flex-1 py-3 rounded-lg font-medium transition-all" data-tab="play">
+                    <i class="fas fa-gamepad mr-2"></i><span class="hidden sm:inline">Play</span>
+                </button>
+                <button class="tab-btn flex-1 py-3 rounded-lg font-medium transition-all" data-tab="dashboard">
+                    <i class="fas fa-chart-line mr-2"></i><span class="hidden sm:inline">Dashboard</span>
+                </button>
+                <button class="tab-btn flex-1 py-3 rounded-lg font-medium transition-all" data-tab="matches">
+                    <i class="fas fa-history mr-2"></i><span class="hidden sm:inline">History</span>
+                </button>
+                <button class="tab-btn flex-1 py-3 rounded-lg font-medium transition-all" data-tab="profile">
+                    <i class="fas fa-user mr-2"></i><span class="hidden sm:inline">Profile</span>
+                </button>
+                <button class="tab-btn flex-1 py-3 rounded-lg font-medium transition-all" data-tab="stats">
+                    <i class="fas fa-trophy mr-2"></i><span class="hidden sm:inline">Stats</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="max-w-7xl mx-auto px-4 pb-8">
+            <!-- Play Tab -->
+            <div id="play" class="tab-content">
+                <!-- Game Mode Selection -->
+                <div id="gameModeSelect" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- VS AI -->
+                    <div class="game-card glass rounded-2xl p-6 cursor-pointer" onclick="showAISelection()">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-robot text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">VS AI</h3>
+                        <p class="text-gray-400 text-sm mb-4">Challenge various LLM models powered by Puter.js. Each AI has unique playing styles!</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">GPT-4o</span>
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">Claude</span>
+                            <span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs">Gemini</span>
+                            <span class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">Llama</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Ranked Match -->
+                    <div class="game-card glass rounded-2xl p-6 cursor-pointer" onclick="startMatchmaking('ranked')">
+                        <div class="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-trophy text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Ranked Match</h3>
+                        <p class="text-gray-400 text-sm mb-4">Compete against players of similar skill. Win to climb the leaderboard!</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded text-xs"><i class="fas fa-chart-line mr-1"></i>Rating Changes</span>
+                            <span class="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs"><i class="fas fa-fire mr-1"></i>Competitive</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Casual Match -->
+                    <div class="game-card glass rounded-2xl p-6 cursor-pointer" onclick="startMatchmaking('casual')">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-coffee text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Casual Match</h3>
+                        <p class="text-gray-400 text-sm mb-4">Relaxed games with no rating pressure. Perfect for practice or fun!</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs"><i class="fas fa-smile mr-1"></i>No Pressure</span>
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs"><i class="fas fa-users mr-1"></i>All Levels</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Create Private Game -->
+                    <div class="game-card glass rounded-2xl p-6 cursor-pointer" onclick="showCreateGame()">
+                        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-plus text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Create Game</h3>
+                        <p class="text-gray-400 text-sm mb-4">Create a private game and invite a friend with a game code.</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 bg-indigo-500/20 text-indigo-300 rounded text-xs"><i class="fas fa-lock mr-1"></i>Private</span>
+                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded text-xs"><i class="fas fa-link mr-1"></i>Shareable</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Join Game -->
+                    <div class="game-card glass rounded-2xl p-6 cursor-pointer" onclick="showJoinGame()">
+                        <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-sign-in-alt text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Join Game</h3>
+                        <p class="text-gray-400 text-sm mb-4">Enter a game code to join a friend's private game.</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded text-xs"><i class="fas fa-keyboard mr-1"></i>Enter Code</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Local Game -->
+                    <div class="game-card glass rounded-2xl p-6 cursor-pointer" onclick="startLocalGame()">
+                        <div class="w-16 h-16 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-user-friends text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Local 2P</h3>
+                        <p class="text-gray-400 text-sm mb-4">Play against a friend on the same device. Hot-seat mode!</p>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 bg-pink-500/20 text-pink-300 rounded text-xs"><i class="fas fa-desktop mr-1"></i>Same Screen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Selection Panel -->
+                <div id="aiSelectPanel" class="hidden">
+                    <button onclick="hideAISelection()" class="mb-4 text-gray-400 hover:text-white">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Game Modes
+                    </button>
+                    <h2 class="text-2xl font-bold mb-6"><i class="fas fa-robot mr-2 text-purple-400"></i>Choose Your AI Opponent</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('gpt-4o')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-brain text-green-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">GPT-4o</h3>
+                                    <p class="text-xs text-gray-400">OpenAI</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Highly strategic with excellent pattern recognition. Adapts to your playstyle.</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded">Hard</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('claude-sonnet')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-sun text-orange-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Claude Sonnet</h3>
+                                    <p class="text-xs text-gray-400">Anthropic</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Balanced and thoughtful player. Excellent at positional play.</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-orange-500/20 text-orange-300 rounded">Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('claude-haiku')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-feather text-blue-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Claude Haiku</h3>
+                                    <p class="text-xs text-gray-400">Anthropic</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Fast and creative. Makes quick, intuitive moves.</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-green-500/20 text-green-300 rounded">Easy</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('gemini-2.0-flash')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-gem text-blue-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Gemini 2.0 Flash</h3>
+                                    <p class="text-xs text-gray-400">Google</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Lightning fast responses with strong tactical awareness.</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-orange-500/20 text-orange-300 rounded">Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('llama-3.3-70b')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-fire text-purple-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Llama 3.3 70B</h3>
+                                    <p class="text-xs text-gray-400">Meta</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Aggressive and unpredictable. Loves sacrifices!</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-orange-500/20 text-orange-300 rounded">Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('mistral-large')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-wind text-indigo-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Mistral Large</h3>
+                                    <p class="text-xs text-gray-400">Mistral AI</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Elegant European style. Strong endgame specialist.</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded">Hard</span>
+                            </div>
+                        </div>
+
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('deepseek-chat')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-teal-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-water text-teal-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">DeepSeek</h3>
+                                    <p class="text-xs text-gray-400">DeepSeek AI</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Deep calculation abilities. Finds hidden tactics.</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded">Hard</span>
+                            </div>
+                        </div>
+
+                        <div class="game-card glass rounded-xl p-5 cursor-pointer" onclick="startAIGame('grok')">
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-12 h-12 bg-gray-500/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-bolt text-gray-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Grok</h3>
+                                    <p class="text-xs text-gray-400">xAI</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400">Witty and unconventional. Expects the unexpected!</p>
+                            <div class="mt-3 flex gap-2">
+                                <span class="text-xs px-2 py-1 bg-orange-500/20 text-orange-300 rounded">Medium</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matchmaking Panel -->
+                <div id="matchmakingPanel" class="hidden">
+                    <div class="glass rounded-2xl p-8 max-w-md mx-auto text-center">
+                        <div class="loader mx-auto mb-6"></div>
+                        <h3 class="text-xl font-bold mb-2" id="matchmakingTitle">Finding Opponent...</h3>
+                        <p class="text-gray-400 mb-6" id="matchmakingStatus">Searching for players in your skill range</p>
+                        <div class="flex items-center justify-center gap-4 mb-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mb-2">
+                                    <i class="fas fa-user text-indigo-400 text-xl"></i>
+                                </div>
+                                <p class="text-sm">You</p>
+                            </div>
+                            <i class="fas fa-bolt text-yellow-400 text-2xl thinking-indicator"></i>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-gray-500/20 rounded-full flex items-center justify-center mb-2">
+                                    <i class="fas fa-question text-gray-400 text-xl"></i>
+                                </div>
+                                <p class="text-sm">???</p>
+                            </div>
+                        </div>
+                        <button onclick="cancelMatchmaking()" class="px-6 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Create Game Panel -->
+                <div id="createGamePanel" class="hidden">
+                    <button onclick="hideCreateGame()" class="mb-4 text-gray-400 hover:text-white">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <div class="glass rounded-2xl p-6 max-w-md mx-auto">
+                        <h3 class="text-xl font-bold mb-4"><i class="fas fa-plus-circle mr-2 text-indigo-400"></i>Create Private Game</h3>
+                        <div class="text-center py-6">
+                            <p class="text-gray-400 mb-4">Share this code with your friend:</p>
+                            <div class="text-4xl font-display font-bold text-indigo-400 mb-4" id="gameCode">----</div>
+                            <button onclick="generateGameCode()" class="px-6 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-500 mb-4">
+                                <i class="fas fa-sync mr-2"></i>Generate New Code
+                            </button>
+                            <p class="text-sm text-gray-500">Waiting for opponent to join...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Join Game Panel -->
+                <div id="joinGamePanel" class="hidden">
+                    <button onclick="hideJoinGame()" class="mb-4 text-gray-400 hover:text-white">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <div class="glass rounded-2xl p-6 max-w-md mx-auto">
+                        <h3 class="text-xl font-bold mb-4"><i class="fas fa-sign-in-alt mr-2 text-cyan-400"></i>Join Game</h3>
+                        <div class="space-y-4">
+                            <input type="text" id="joinCodeInput" placeholder="Enter game code" maxlength="6"
+                                class="w-full text-center text-2xl font-display bg-white/5 border border-white/10 rounded-xl px-4 py-4 focus:outline-none focus:border-indigo-500 uppercase">
+                            <button onclick="joinGameByCode()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl font-semibold hover:from-cyan-500 hover:to-blue-500">
+                                <i class="fas fa-play mr-2"></i>Join Game
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Board -->
+                <div id="gameBoard" class="hidden">
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <!-- Board Section -->
+                        <div class="flex-1">
+                            <div class="glass rounded-2xl p-4 mb-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-user" id="opponentIcon"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold" id="opponentName">Opponent</p>
+                                            <p class="text-xs text-gray-400" id="opponentRating">Rating: 1200</p>
+                                        </div>
+                                    </div>
+                                    <div id="opponentStatus" class="px-3 py-1 bg-gray-500/20 text-gray-400 rounded-full text-sm">
+                                        <i class="fas fa-clock mr-1"></i>Waiting
+                                    </div>
+                                </div>
+                                
+                                <div class="chess-board max-w-lg mx-auto" id="chessBoard"></div>
+                                
+                                <div class="flex items-center justify-between mt-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold" id="playerName">You</p>
+                                            <p class="text-xs text-gray-400" id="playerRatingDisplay">Rating: 1200</p>
+                                        </div>
+                                    </div>
+                                    <div id="playerStatus" class="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-sm">
+                                        <i class="fas fa-chess mr-1"></i>Your Turn
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Move Submission -->
+                            <div class="glass rounded-2xl p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <p class="text-sm text-gray-400">Your Move:</p>
+                                        <p class="text-xl font-bold" id="selectedMove">Select a piece</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="clearMove()" class="px-4 py-2 bg-gray-500/20 rounded-lg hover:bg-gray-500/30">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                        <button onclick="submitMove()" id="submitMoveBtn" disabled 
+                                            class="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:from-green-500 hover:to-emerald-500">
+                                            <i class="fas fa-check mr-2"></i>Lock In Move
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="moveTimer" class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                                    <div id="timerBar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-1000" style="width: 100%"></div>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-2 text-center" id="timerText">30 seconds to submit move</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Side Panel -->
+                        <div class="lg:w-80">
+                            <!-- Game Info -->
+                            <div class="glass rounded-2xl p-4 mb-4">
+                                <h3 class="font-semibold mb-3"><i class="fas fa-info-circle mr-2 text-indigo-400"></i>Game Info</h3>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">Mode</span>
+                                        <span id="gameMode">Casual</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">Turn</span>
+                                        <span id="turnNumber">1</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-400">Your Color</span>
+                                        <span id="playerColor">White</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Move History -->
+                            <div class="glass rounded-2xl p-4 mb-4">
+                                <h3 class="font-semibold mb-3"><i class="fas fa-list mr-2 text-indigo-400"></i>Move History</h3>
+                                <div id="moveHistory" class="max-h-48 overflow-y-auto space-y-1 text-sm font-mono">
+                                    <p class="text-gray-500 text-center py-4">No moves yet</p>
+                                </div>
+                            </div>
+                            
+                            <!-- SimChess Rules -->
+                            <div class="glass rounded-2xl p-4 mb-4">
+                                <h3 class="font-semibold mb-3"><i class="fas fa-book mr-2 text-indigo-400"></i>SimChess Rules</h3>
+                                <ul class="text-xs text-gray-400 space-y-2">
+                                    <li><i class="fas fa-sync mr-2 text-indigo-400"></i>Both players move simultaneously</li>
+                                    <li><i class="fas fa-eye-slash mr-2 text-indigo-400"></i>You don't see opponent's move until revealed</li>
+                                    <li><i class="fas fa-crosshairs mr-2 text-indigo-400"></i>If pieces move to same square, both captured</li>
+                                    <li><i class="fas fa-exchange-alt mr-2 text-indigo-400"></i>If pieces swap positions, both captured</li>
+                                    <li><i class="fas fa-crown mr-2 text-indigo-400"></i>Capture the King to win!</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Game Actions -->
+                            <div class="glass rounded-2xl p-4">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="offerDraw()" class="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 text-sm">
+                                        <i class="fas fa-handshake mr-1"></i>Draw
+                                    </button>
+                                    <button onclick="resignGame()" class="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 text-sm">
+                                        <i class="fas fa-flag mr-1"></i>Resign
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="stat-card glass rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-gray-400">Total Matches</span>
+                            <div class="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chess text-indigo-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold" id="totalMatches">0</p>
+                    </div>
+                    
+                    <div class="stat-card glass rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-gray-400">Wins</span>
+                            <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-trophy text-green-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold text-green-400" id="totalWins">0</p>
+                    </div>
+                    
+                    <div class="stat-card glass rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-gray-400">Losses</span>
+                            <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-times-circle text-red-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold text-red-400" id="totalLosses">0</p>
+                    </div>
+                    
+                    <div class="stat-card glass rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-gray-400">Win Rate</span>
+                            <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-percentage text-purple-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-bold text-purple-400" id="winRate">0%</p>
+                    </div>
+                </div>
+
+                <!-- Quick Add Match -->
+                <div class="glass rounded-2xl p-6 mb-8">
+                    <h2 class="text-xl font-semibold mb-4"><i class="fas fa-plus-circle mr-2 text-indigo-400"></i>Quick Add Match</h2>
+                    <form id="quickMatchForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <input type="text" id="qOpponent" placeholder="Opponent name" required
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                        <select id="qResult" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                            <option value="">Result</option>
+                            <option value="win">Win</option>
+                            <option value="loss">Loss</option>
+                            <option value="draw">Draw</option>
+                        </select>
+                        <input type="number" id="qMoves" placeholder="Total moves" min="1"
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                        <input type="date" id="qDate" required
+                            class="bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                        <button type="submit" class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl px-6 py-3 font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all">
+                            Add Match
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Recent Matches -->
+                <div class="glass rounded-2xl p-6">
+                    <h2 class="text-xl font-semibold mb-4"><i class="fas fa-clock mr-2 text-indigo-400"></i>Recent Matches</h2>
+                    <div id="recentMatches" class="space-y-2">
+                        <p class="text-gray-500 text-center py-8">No matches recorded yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matches Tab -->
+            <div id="matches" class="tab-content hidden">
+                <div class="glass rounded-2xl p-6 mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <h2 class="text-xl font-semibold"><i class="fas fa-list mr-2 text-indigo-400"></i>Match History</h2>
+                        <div class="flex gap-2">
+                            <select id="filterResult" class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm">
+                                <option value="">All Results</option>
+                                <option value="win">Wins</option>
+                                <option value="loss">Losses</option>
+                                <option value="draw">Draws</option>
+                            </select>
+                            <input type="text" id="searchOpponent" placeholder="Search opponent..."
+                                class="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm">
+                        </div>
+                    </div>
+                    
+                    <div id="matchList" class="space-y-2">
+                        <p class="text-gray-500 text-center py-8">No matches found</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profile" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass rounded-2xl p-6">
+                        <h2 class="text-xl font-semibold mb-6"><i class="fas fa-user-edit mr-2 text-indigo-400"></i>Player Profile</h2>
+                        <form id="profileForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Display Name</label>
+                                <input type="text" id="profileName" placeholder="Your gaming name"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Preferred Color</label>
+                                <select id="profileColor" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                                    <option value="white">White</option>
+                                    <option value="black">Black</option>
+                                    <option value="random">Random</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Playing Style</label>
+                                <select id="profileStyle" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500">
+                                    <option value="aggressive">Aggressive</option>
+                                    <option value="defensive">Defensive</option>
+                                    <option value="balanced">Balanced</option>
+                                    <option value="tactical">Tactical</option>
+                                    <option value="positional">Positional</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-2">Bio</label>
+                                <textarea id="profileBio" rows="3" placeholder="Tell us about your SimChess journey..."
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl px-6 py-3 font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all">
+                                <i class="fas fa-save mr-2"></i>Save Profile
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-6">
+                        <h2 class="text-xl font-semibold mb-6"><i class="fas fa-medal mr-2 text-indigo-400"></i>Achievements</h2>
+                        <div id="achievements" class="grid grid-cols-2 gap-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div id="stats" class="tab-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass rounded-2xl p-6">
+                        <h2 class="text-xl font-semibold mb-6"><i class="fas fa-chart-pie mr-2 text-indigo-400"></i>Performance Overview</h2>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Win Rate</span>
+                                <span class="font-semibold" id="statWinRate">0%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                                <div id="winRateBar" class="bg-gradient-to-r from-green-500 to-emerald-400 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-4 mt-6">
+                                <div class="text-center p-4 bg-green-500/10 rounded-xl">
+                                    <p class="text-2xl font-bold text-green-400" id="statWins">0</p>
+                                    <p class="text-sm text-gray-400">Wins</p>
+                                </div>
+                                <div class="text-center p-4 bg-red-500/10 rounded-xl">
+                                    <p class="text-2xl font-bold text-red-400" id="statLosses">0</p>
+                                    <p class="text-sm text-gray-400">Losses</p>
+                                </div>
+                                <div class="text-center p-4 bg-yellow-500/10 rounded-xl">
+                                    <p class="text-2xl font-bold text-yellow-400" id="statDraws">0</p>
+                                    <p class="text-sm text-gray-400">Draws</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-6">
+                        <h2 class="text-xl font-semibold mb-6"><i class="fas fa-users mr-2 text-indigo-400"></i>Top Opponents</h2>
+                        <div id="topOpponents" class="space-y-3">
+                            <p class="text-gray-500 text-center py-4">No opponents yet</p>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-6">
+                        <h2 class="text-xl font-semibold mb-6"><i class="fas fa-fire mr-2 text-indigo-400"></i>Streaks</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-4 bg-indigo-500/10 rounded-xl">
+                                <p class="text-3xl font-bold text-indigo-400" id="currentStreak">0</p>
+                                <p class="text-sm text-gray-400">Current Streak</p>
+                            </div>
+                            <div class="text-center p-4 bg-purple-500/10 rounded-xl">
+                                <p class="text-3xl font-bold text-purple-400" id="bestStreak">0</p>
+                                <p class="text-sm text-gray-400">Best Win Streak</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass rounded-2xl p-6">
+                        <h2 class="text-xl font-semibold mb-6"><i class="fas fa-robot mr-2 text-indigo-400"></i>AI Performance</h2>
+                        <div id="aiStats" class="space-y-3">
+                            <p class="text-gray-500 text-center py-4">No AI games yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="glass rounded-2xl p-8 max-w-md w-full text-center glow">
+            <div id="gameOverIcon" class="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-trophy text-4xl"></i>
+            </div>
+            <h2 id="gameOverTitle" class="text-3xl font-bold mb-2">Victory!</h2>
+            <p id="gameOverMessage" class="text-gray-400 mb-6">You captured the enemy King!</p>
+            <div id="ratingChange" class="hidden mb-6 py-3 px-6 bg-white/10 rounded-xl inline-block">
+                <span class="text-gray-400">Rating: </span>
+                <span id="ratingChangeText" class="font-bold text-green-400">+25</span>
+            </div>
+            <div class="flex gap-4 justify-center">
+                <button onclick="playAgain()" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl font-semibold hover:from-indigo-500 hover:to-purple-500">
+                    <i class="fas fa-redo mr-2"></i>Play Again
+                </button>
+                <button onclick="exitGame()" class="px-6 py-3 bg-white/10 rounded-xl font-semibold hover:bg-white/20">
+                    <i class="fas fa-home mr-2"></i>Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 glass rounded-xl px-6 py-4 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <p id="toastMessage"></p>
+    </div>
+
+    <script>
+        // Chess Pieces Unicode
+        const PIECES = {
+            wK: '♔', wQ: '♕', wR: '♖', wB: '♗', wN: '♘', wP: '♙',
+            bK: '♚', bQ: '♛', bR: '♜', bB: '♝', bN: '♞', bP: '♟'
+        };
+
+        // Initial Board Setup
+        const INITIAL_BOARD = [
+            ['bR','bN','bB','bQ','bK','bB','bN','bR'],
+            ['bP','bP','bP','bP','bP','bP','bP','bP'],
+            ['','','','','','','',''],
+            ['','','','','','','',''],
+            ['','','','','','','',''],
+            ['','','','','','','',''],
+            ['wP','wP','wP','wP','wP','wP','wP','wP'],
+            ['wR','wN','wB','wQ','wK','wB','wN','wR']
+        ];
+
+        // App State
+        let userData = {
+            profile: { name: '', color: 'random', style: 'balanced', bio: '' },
+            matches: [],
+            rating: 1200
+        };
+
+        // Game State
+        let gameState = {
+            active: false,
+            mode: null, // 'ai', 'ranked', 'casual', 'private', 'local'
+            board: JSON.parse(JSON.stringify(INITIAL_BOARD)),
+            playerColor: 'white',
+            selectedSquare: null,
+            playerMove: null,
+            opponentMove: null,
+            moveHistory: [],
+            turn: 1,
+            aiModel: null,
+            opponentName: 'Opponent',
+            isPlayerTurn: true,
+            moveSubmitted: false,
+            localPlayerTurn: 'white', // For local 2P
+            gameCode: null,
+            timerInterval: null,
+            timeLeft: 30
+        };
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loginScreen = document.getElementById('loginScreen');
+        const mainApp = document.getElementById('mainApp');
+
+        // Initialize App
+        async function init() {
+            try {
+                if (puter.auth.isSignedIn()) {
+                    await loadUserData();
+                    showMainApp();
+                } else {
+                    showLoginScreen();
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                showLoginScreen();
+            }
+        }
+
+        function showLoginScreen() {
+            loadingScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+            mainApp.classList.add('hidden');
+        }
+
+        async function showMainApp() {
+            loadingScreen.classList.add('hidden');
+            loginScreen.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            
+            const user = await puter.auth.getUser();
+            document.getElementById('displayName').textContent = userData.profile.name || user.username || 'Player';
+            document.getElementById('userEmail').textContent = user.username || 'Guest';
+            document.getElementById('playerRating').textContent = userData.rating || 1200;
+            document.getElementById('qDate').valueAsDate = new Date();
+            
+            updateDashboard();
+            loadProfile();
+            loadAchievements();
+        }
+
+        // Auth handlers
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            try {
+                await puter.auth.signIn();
+                await loadUserData();
+                showMainApp();
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Login failed. Please try again.', 'error');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await puter.auth.signOut();
+                userData = { profile: { name: '', color: 'random', style: 'balanced', bio: '' }, matches: [], rating: 1200 };
+                showLoginScreen();
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+
+        // Data Management
+        async function loadUserData() {
+            try {
+                const data = await puter.kv.get('simchess_data');
+                if (data) {
+                    userData = JSON.parse(data);
+                }
+            } catch (error) {
+                console.error('Load data error:', error);
+            }
+        }
+
+        async function saveUserData() {
+            try {
+                await puter.kv.set('simchess_data', JSON.stringify(userData));
+            } catch (error) {
+                console.error('Save data error:', error);
+            }
+        }
+
+        // Tab Navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-indigo-600'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                btn.classList.add('active', 'bg-indigo-600');
+                document.getElementById(btn.dataset.tab).classList.remove('hidden');
+                
+                if (btn.dataset.tab === 'matches') renderMatchList();
+                if (btn.dataset.tab === 'stats') updateStats();
+            });
+        });
+
+        // ========== GAME FUNCTIONS ==========
+        
+        function showAISelection() {
+            document.getElementById('gameModeSelect').classList.add('hidden');
+            document.getElementById('aiSelectPanel').classList.remove('hidden');
+        }
+
+        function hideAISelection() {
+            document.getElementById('aiSelectPanel').classList.add('hidden');
+            document.getElementById('gameModeSelect').classList.remove('hidden');
+        }
+
+        function showCreateGame() {
+            document.getElementById('gameModeSelect').classList.add('hidden');
+            document.getElementById('createGamePanel').classList.remove('hidden');
+            generateGameCode();
+        }
+
+        function hideCreateGame() {
+            document.getElementById('createGamePanel').classList.add('hidden');
+            document.getElementById('gameModeSelect').classList.remove('hidden');
+        }
+
+        function showJoinGame() {
+            document.getElementById('gameModeSelect').classList.add('hidden');
+            document.getElementById('joinGamePanel').classList.remove('hidden');
+        }
+
+        function hideJoinGame() {
+            document.getElementById('joinGamePanel').classList.add('hidden');
+            document.getElementById('gameModeSelect').classList.remove('hidden');
+        }
+
+        function generateGameCode() {
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById('gameCode').textContent = code;
+            gameState.gameCode = code;
+        }
+
+        function joinGameByCode() {
+            const code = document.getElementById('joinCodeInput').value.toUpperCase();
+            if (code.length >= 4) {
+                showToast('Connecting to game...');
+                // In production, this would connect to a real game server
+                setTimeout(() => {
+                    startGame('private', 'white', 'Friend');
+                }, 1000);
+            }
+        }
+
+        function startMatchmaking(type) {
+            document.getElementById('gameModeSelect').classList.add('hidden');
+            document.getElementById('matchmakingPanel').classList.remove('hidden');
+            document.getElementById('matchmakingTitle').textContent = type === 'ranked' ? 'Finding Ranked Match...' : 'Finding Casual Match...';
+            
+            // Simulate matchmaking (in production, this would be real matchmaking)
+            setTimeout(() => {
+                const opponents = ['ChessMaster99', 'SimKing', 'PawnStorm', 'KnightRider', 'QueenGambit'];
+                const opponent = opponents[Math.floor(Math.random() * opponents.length)];
+                startGame(type, Math.random() > 0.5 ? 'white' : 'black', opponent);
+            }, 2000 + Math.random() * 2000);
+        }
+
+        function cancelMatchmaking() {
+            document.getElementById('matchmakingPanel').classList.add('hidden');
+            document.getElementById('gameModeSelect').classList.remove('hidden');
+        }
+
+        function startAIGame(model) {
+            gameState.aiModel = model;
+            const aiNames = {
+                'gpt-4o': 'GPT-4o',
+                'claude-sonnet': 'Claude Sonnet',
+                'claude-haiku': 'Claude Haiku',
+                'gemini-2.0-flash': 'Gemini Flash',
+                'llama-3.3-70b': 'Llama 3.3',
+                'mistral-large': 'Mistral Large',
+                'deepseek-chat': 'DeepSeek',
+                'grok': 'Grok'
+            };
+            startGame('ai', 'white', aiNames[model] || model);
+        }
+
+        function startLocalGame() {
+            startGame('local', 'white', 'Player 2');
+        }
+
+        function startGame(mode, playerColor, opponentName) {
+            gameState = {
+                active: true,
+                mode: mode,
+                board: JSON.parse(JSON.stringify(INITIAL_BOARD)),
+                playerColor: playerColor,
+                selectedSquare: null,
+                playerMove: null,
+                opponentMove: null,
+                moveHistory: [],
+                turn: 1,
+                aiModel: gameState.aiModel,
+                opponentName: opponentName,
+                isPlayerTurn: true,
+                moveSubmitted: false,
+                localPlayerTurn: 'white',
+                gameCode: gameState.gameCode,
+                timerInterval: null,
+                timeLeft: 30
+            };
+
+            // Hide panels and show game board
+            document.getElementById('gameModeSelect').classList.add('hidden');
+            document.getElementById('aiSelectPanel').classList.add('hidden');
+            document.getElementById('matchmakingPanel').classList.add('hidden');
+            document.getElementById('createGamePanel').classList.add('hidden');
+            document.getElementById('joinGamePanel').classList.add('hidden');
+            document.getElementById('gameBoard').classList.remove('hidden');
+
+            // Update UI
+            document.getElementById('opponentName').textContent = opponentName;
+            document.getElementById('opponentRating').textContent = mode === 'ai' ? 'AI' : `Rating: ${1100 + Math.floor(Math.random() * 300)}`;
+            document.getElementById('opponentIcon').className = mode === 'ai' ? 'fas fa-robot' : 'fas fa-user';
+            document.getElementById('playerName').textContent = userData.profile.name || 'You';
+            document.getElementById('playerRatingDisplay').textContent = `Rating: ${userData.rating}`;
+            document.getElementById('gameMode').textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+            document.getElementById('playerColor').textContent = playerColor.charAt(0).toUpperCase() + playerColor.slice(1);
+            document.getElementById('turnNumber').textContent = '1';
+            document.getElementById('moveHistory').innerHTML = '<p class="text-gray-500 text-center py-4">No moves yet</p>';
+
+            renderBoard();
+            startTimer();
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('chessBoard');
+            const isFlipped = gameState.playerColor === 'black';
+            
+            boardEl.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const actualRow = isFlipped ? 7 - row : row;
+                    const actualCol = isFlipped ? 7 - col : col;
+                    const piece = gameState.board[actualRow][actualCol];
+                    const isLight = (actualRow + actualCol) % 2 === 0;
+                    
+                    const square = document.createElement('div');
+                    square.className = `chess-square ${isLight ? 'light' : 'dark'}`;
+                    square.dataset.row = actualRow;
+                    square.dataset.col = actualCol;
+                    
+                    if (piece) {
+                        const pieceEl = document.createElement('span');
+                        pieceEl.className = `chess-piece ${piece[0] === 'w' ? 'white' : 'black'}`;
+                        pieceEl.textContent = PIECES[piece];
+                        square.appendChild(pieceEl);
+                    }
+                    
+                    // Highlight selected square
+                    if (gameState.selectedSquare && 
+                        gameState.selectedSquare.row === actualRow && 
+                        gameState.selectedSquare.col === actualCol) {
+                        square.classList.add('selected');
+                    }
+                    
+                    // Highlight player's pending move
+                    if (gameState.playerMove) {
+                        if (gameState.playerMove.from.row === actualRow && gameState.playerMove.from.col === actualCol) {
+                            square.classList.add('move-submitted');
+                        }
+                        if (gameState.playerMove.to.row === actualRow && gameState.playerMove.to.col === actualCol) {
+                            square.classList.add('move-submitted');
+                        }
+                    }
+                    
+                    // Show valid moves
+                    if (gameState.selectedSquare && !gameState.moveSubmitted) {
+                        const moves = getValidMoves(gameState.selectedSquare.row, gameState.selectedSquare.col);
+                        if (moves.some(m => m.row === actualRow && m.col === actualCol)) {
+                            if (piece && piece[0] !== gameState.playerColor[0]) {
+                                square.classList.add('valid-capture');
+                            } else if (!piece) {
+                                square.classList.add('valid-move');
+                            }
+                        }
+                    }
+                    
+                    square.addEventListener('click', () => handleSquareClick(actualRow, actualCol));
+                    boardEl.appendChild(square);
+                }
+            }
+        }
+
+        function handleSquareClick(row, col) {
+            if (!gameState.active || gameState.moveSubmitted) return;
+            
+            const piece = gameState.board[row][col];
+            const myColor = gameState.mode === 'local' ? gameState.localPlayerTurn : gameState.playerColor;
+            
+            // If clicking on own piece, select it
+            if (piece && piece[0] === myColor[0]) {
+                gameState.selectedSquare = { row, col };
+                gameState.playerMove = null;
+                document.getElementById('selectedMove').textContent = `Selected: ${PIECES[piece]} at ${getSquareName(row, col)}`;
+                document.getElementById('submitMoveBtn').disabled = true;
+                renderBoard();
+                return;
+            }
+            
+            // If we have a selected piece and clicking on valid move
+            if (gameState.selectedSquare) {
+                const moves = getValidMoves(gameState.selectedSquare.row, gameState.selectedSquare.col);
+                const isValidMove = moves.some(m => m.row === row && m.col === col);
+                
+                if (isValidMove) {
+                    const fromPiece = gameState.board[gameState.selectedSquare.row][gameState.selectedSquare.col];
+                    gameState.playerMove = {
+                        from: { ...gameState.selectedSquare },
+                        to: { row, col },
+                        piece: fromPiece
+                    };
+                    
+                    const moveText = `${PIECES[fromPiece]} ${getSquareName(gameState.selectedSquare.row, gameState.selectedSquare.col)} → ${getSquareName(row, col)}`;
+                    document.getElementById('selectedMove').textContent = moveText;
+                    document.getElementById('submitMoveBtn').disabled = false;
+                    
+                    gameState.selectedSquare = null;
+                    renderBoard();
+                }
+            }
+        }
+
+        function getValidMoves(row, col) {
+            const piece = gameState.board[row][col];
+            if (!piece) return [];
+            
+            const moves = [];
+            const color = piece[0];
+            const type = piece[1];
+            const direction = color === 'w' ? -1 : 1;
+            
+            const addMove = (r, c) => {
+                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    const target = gameState.board[r][c];
+                    if (!target || target[0] !== color) {
+                        moves.push({ row: r, col: c });
+                    }
+                }
+            };
+            
+            const addSlidingMoves = (directions) => {
+                for (const [dr, dc] of directions) {
+                    for (let i = 1; i < 8; i++) {
+                        const r = row + dr * i;
+                        const c = col + dc * i;
+                        if (r < 0 || r >= 8 || c < 0 || c >= 8) break;
+                        const target = gameState.board[r][c];
+                        if (target) {
+                            if (target[0] !== color) moves.push({ row: r, col: c });
+                            break;
+                        }
+                        moves.push({ row: r, col: c });
+                    }
+                }
+            };
+            
+            switch (type) {
+                case 'P': // Pawn
+                    const startRow = color === 'w' ? 6 : 1;
+                    // Forward move
+                    if (!gameState.board[row + direction]?.[col]) {
+                        addMove(row + direction, col);
+                        // Double move from start
+                        if (row === startRow && !gameState.board[row + direction * 2]?.[col]) {
+                            addMove(row + direction * 2, col);
+                        }
+                    }
+                    // Captures
+                    if (gameState.board[row + direction]?.[col - 1]?.[0] === (color === 'w' ? 'b' : 'w')) {
+                        addMove(row + direction, col - 1);
+                    }
+                    if (gameState.board[row + direction]?.[col + 1]?.[0] === (color === 'w' ? 'b' : 'w')) {
+                        addMove(row + direction, col + 1);
+                    }
+                    break;
+                    
+                case 'N': // Knight
+                    [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]].forEach(([dr,dc]) => addMove(row+dr, col+dc));
+                    break;
+                    
+                case 'B': // Bishop
+                    addSlidingMoves([[1,1],[1,-1],[-1,1],[-1,-1]]);
+                    break;
+                    
+                case 'R': // Rook
+                    addSlidingMoves([[1,0],[-1,0],[0,1],[0,-1]]);
+                    break;
+                    
+                case 'Q': // Queen
+                    addSlidingMoves([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+                    break;
+                    
+                case 'K': // King
+                    [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc]) => addMove(row+dr, col+dc));
+                    break;
+            }
+            
+            return moves;
+        }
+
+        function getSquareName(row, col) {
+            return String.fromCharCode(97 + col) + (8 - row);
+        }
+
+        function clearMove() {
+            gameState.selectedSquare = null;
+            gameState.playerMove = null;
+            document.getElementById('selectedMove').textContent = 'Select a piece';
+            document.getElementById('submitMoveBtn').disabled = true;
+            renderBoard();
+        }
+
+        function startTimer() {
+            gameState.timeLeft = 30;
+            updateTimerDisplay();
+            
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                updateTimerDisplay();
+                
+                if (gameState.timeLeft <= 0) {
+                    if (!gameState.moveSubmitted && gameState.playerMove) {
+                        submitMove();
+                    } else if (!gameState.moveSubmitted) {
+                        // Random move if no move selected
+                        makeRandomMove();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const bar = document.getElementById('timerBar');
+            const text = document.getElementById('timerText');
+            bar.style.width = (gameState.timeLeft / 30 * 100) + '%';
+            text.textContent = `${gameState.timeLeft} seconds to submit move`;
+            
+            if (gameState.timeLeft <= 10) {
+                bar.classList.remove('from-indigo-500', 'to-purple-500');
+                bar.classList.add('from-red-500', 'to-orange-500');
+            } else {
+                bar.classList.remove('from-red-500', 'to-orange-500');
+                bar.classList.add('from-indigo-500', 'to-purple-500');
+            }
+        }
+
+        function makeRandomMove() {
+            const myColor = gameState.mode === 'local' ? gameState.localPlayerTurn : gameState.playerColor;
+            
+            // Find all pieces that can move
+            const possibleMoves = [];
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = gameState.board[row][col];
+                    if (piece && piece[0] === myColor[0]) {
+                        const moves = getValidMoves(row, col);
+                        moves.forEach(m => possibleMoves.push({ from: { row, col }, to: m, piece }));
+                    }
+                }
+            }
+            
+            if (possibleMoves.length > 0) {
+                const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                gameState.playerMove = randomMove;
+                submitMove();
+            }
+        }
+
+        async function submitMove() {
+            if (!gameState.playerMove) return;
+            
+            gameState.moveSubmitted = true;
+            clearInterval(gameState.timerInterval);
+            
+            document.getElementById('playerStatus').innerHTML = '<i class="fas fa-check mr-1"></i>Move Locked';
+            document.getElementById('playerStatus').className = 'px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm';
+            document.getElementById('submitMoveBtn').disabled = true;
+            
+            if (gameState.mode === 'ai') {
+                await getAIMove();
+            } else if (gameState.mode === 'local') {
+                // For local game, prompt second player
+                handleLocalTurn();
+                return;
+            } else {
+                // Simulate opponent move for demo
+                simulateOpponentMove();
+            }
+            
+            resolveMoves();
+        }
+
+        async function getAIMove() {
+            document.getElementById('opponentStatus').innerHTML = '<i class="fas fa-brain mr-1 thinking-indicator"></i>Thinking...';
+            document.getElementById('opponentStatus').className = 'px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm';
+            
+            const boardStr = gameState.board.map((row, i) => 
+                `${8-i}: ${row.map(p => p || '..').join(' ')}`
+            ).join('\n');
+            
+            const prompt = `You are playing Simultaneous Move Chess as ${gameState.playerColor === 'white' ? 'black' : 'white'}. 
+Both players move at the same time without seeing each other's move.
+
+Current board (columns a-h, rows 8-1):
+   a  b  c  d  e  f  g  h
+${boardStr}
+
+Pieces: wK=White King, wQ=Queen, wR=Rook, wB=Bishop, wN=Knight, wP=Pawn (same for black with 'b')
+
+Previous moves: ${gameState.moveHistory.length > 0 ? gameState.moveHistory.slice(-6).join(', ') : 'None'}
+
+Rules:
+- If both pieces move to the same square, BOTH are captured
+- If pieces swap positions, BOTH are captured  
+- Capture the King to win
+
+Choose your best move. Reply with ONLY the move in format: "e7-e5" (from-to squares). Nothing else.`;
+
+            try {
+                const response = await puter.ai.chat(prompt, { model: gameState.aiModel });
+                const moveText = response.trim();
+                const match = moveText.match(/([a-h][1-8])-([a-h][1-8])/i);
+                
+                if (match) {
+                    const fromCol = match[1].charCodeAt(0) - 97;
+                    const fromRow = 8 - parseInt(match[1][1]);
+                    const toCol = match[2].charCodeAt(0) - 97;
+                    const toRow = 8 - parseInt(match[2][1]);
+                    
+                    const piece = gameState.board[fromRow][fromCol];
+                    if (piece && piece[0] === (gameState.playerColor === 'white' ? 'b' : 'w')) {
+                        gameState.opponentMove = {
+                            from: { row: fromRow, col: fromCol },
+                            to: { row: toRow, col: toCol },
+                            piece: piece
+                        };
+                    } else {
+                        generateRandomOpponentMove();
+                    }
+                } else {
+                    generateRandomOpponentMove();
+                }
+            } catch (error) {
+                console.error('AI error:', error);
+                generateRandomOpponentMove();
+            }
+        }
+
+        function generateRandomOpponentMove() {
+            const oppColor = gameState.playerColor === 'white' ? 'b' : 'w';
+            const possibleMoves = [];
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = gameState.board[row][col];
+                    if (piece && piece[0] === oppColor) {
+                        const moves = getValidMoves(row, col);
+                        moves.forEach(m => possibleMoves.push({ from: { row, col }, to: m, piece }));
+                    }
+                }
+            }
+            
+            if (possibleMoves.length > 0) {
+                gameState.opponentMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            }
+        }
+
+        function simulateOpponentMove() {
+            generateRandomOpponentMove();
+        }
+
+        function handleLocalTurn() {
+            showToast(`${gameState.localPlayerTurn === 'white' ? 'White' : 'Black'} move locked! Pass device to ${gameState.localPlayerTurn === 'white' ? 'Black' : 'White'}`);
+            
+            // Store the move and switch turns
+            if (gameState.localPlayerTurn === 'white') {
+                gameState.opponentMove = null; // Will be set by second player
+                gameState.localPlayerTurn = 'black';
+                gameState.moveSubmitted = false;
+                gameState.selectedSquare = null;
+                
+                // Hide the board temporarily
+                setTimeout(() => {
+                    const storedMove = gameState.playerMove;
+                    gameState.playerMove = null;
+                    document.getElementById('selectedMove').textContent = 'Select a piece (Black)';
+                    document.getElementById('playerStatus').innerHTML = '<i class="fas fa-chess mr-1"></i>Black\'s Turn';
+                    document.getElementById('playerStatus').className = 'px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-sm';
+                    renderBoard();
+                    startTimer();
+                    
+                    // Store white's move to resolve later
+                    gameState.whiteMoveStored = storedMove;
+                }, 1500);
+            } else {
+                // Black submitted, resolve both moves
+                gameState.opponentMove = gameState.whiteMoveStored;
+                const blackMove = gameState.playerMove;
+                gameState.playerMove = gameState.whiteMoveStored;
+                gameState.opponentMove = blackMove;
+                gameState.localPlayerTurn = 'white';
+                resolveMoves();
+            }
+        }
+
+        function resolveMoves() {
+            if (!gameState.playerMove) return;
+            
+            clearInterval(gameState.timerInterval);
+            
+            const pMove = gameState.playerMove;
+            const oMove = gameState.opponentMove;
+            
+            let collision = false;
+            let swap = false;
+            let capturedKing = null;
+            
+            // Check for collision (both moving to same square)
+            if (oMove && pMove.to.row === oMove.to.row && pMove.to.col === oMove.to.col) {
+                collision = true;
+            }
+            
+            // Check for swap (pieces trading places)
+            if (oMove && 
+                pMove.to.row === oMove.from.row && pMove.to.col === oMove.from.col &&
+                oMove.to.row === pMove.from.row && oMove.to.col === pMove.from.col) {
+                swap = true;
+            }
+            
+            // Apply moves
+            const newBoard = JSON.parse(JSON.stringify(gameState.board));
+            
+            if (collision) {
+                // Both pieces are captured - clear both destination and origins
+                newBoard[pMove.from.row][pMove.from.col] = '';
+                if (oMove) newBoard[oMove.from.row][oMove.from.col] = '';
+                // Check if either was capturing a king at destination
+                const destPiece = gameState.board[pMove.to.row][pMove.to.col];
+                if (destPiece && destPiece[1] === 'K') {
+                    capturedKing = destPiece[0] === 'w' ? 'white' : 'black';
+                }
+                showToast('Collision! Both pieces captured!');
+            } else if (swap) {
+                // Both pieces are captured
+                newBoard[pMove.from.row][pMove.from.col] = '';
+                newBoard[pMove.to.row][pMove.to.col] = '';
+                if (oMove) {
+                    newBoard[oMove.from.row][oMove.from.col] = '';
+                    newBoard[oMove.to.row][oMove.to.col] = '';
+                }
+                showToast('Swap detected! Both pieces captured!');
+            } else {
+                // Normal moves
+                // Check for king captures
+                const playerTarget = gameState.board[pMove.to.row][pMove.to.col];
+                if (playerTarget && playerTarget[1] === 'K') {
+                    capturedKing = playerTarget[0] === 'w' ? 'white' : 'black';
+                }
+                
+                newBoard[pMove.to.row][pMove.to.col] = pMove.piece;
+                newBoard[pMove.from.row][pMove.from.col] = '';
+                
+                if (oMove) {
+                    const oppTarget = gameState.board[oMove.to.row][oMove.to.col];
+                    if (oppTarget && oppTarget[1] === 'K') {
+                        capturedKing = oppTarget[0] === 'w' ? 'white' : 'black';
+                    }
+                    
+                    // Only apply opponent move if destination wasn't just occupied by player's piece
+                    if (!(oMove.to.row === pMove.from.row && oMove.to.col === pMove.from.col)) {
+                        newBoard[oMove.to.row][oMove.to.col] = oMove.piece;
+                    }
+                    if (!(oMove.from.row === pMove.to.row && oMove.from.col === pMove.to.col)) {
+                        newBoard[oMove.from.row][oMove.from.col] = '';
+                    }
+                }
+            }
+            
+            gameState.board = newBoard;
+            
+            // Add to move history
+            const pMoveStr = `${PIECES[pMove.piece]}${getSquareName(pMove.from.row, pMove.from.col)}-${getSquareName(pMove.to.row, pMove.to.col)}`;
+            const oMoveStr = oMove ? `${PIECES[oMove.piece]}${getSquareName(oMove.from.row, oMove.from.col)}-${getSquareName(oMove.to.row, oMove.to.col)}` : 'none';
+            
+            gameState.moveHistory.push(`T${gameState.turn}: You:${pMoveStr} | Opp:${oMoveStr}`);
+            updateMoveHistory();
+            
+            gameState.turn++;
+            document.getElementById('turnNumber').textContent = gameState.turn;
+            
+            // Check for game over
+            if (capturedKing) {
+                const playerWon = (capturedKing === 'white' && gameState.playerColor === 'black') ||
+                                  (capturedKing === 'black' && gameState.playerColor === 'white');
+                endGame(playerWon ? 'win' : 'loss', 'King captured!');
+                return;
+            }
+            
+            // Check if any king is missing from the board
+            let whiteKing = false, blackKing = false;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (gameState.board[r][c] === 'wK') whiteKing = true;
+                    if (gameState.board[r][c] === 'bK') blackKing = true;
+                }
+            }
+            
+            if (!whiteKing || !blackKing) {
+                if (!whiteKing && !blackKing) {
+                    endGame('draw', 'Both Kings captured!');
+                } else if (!whiteKing) {
+                    endGame(gameState.playerColor === 'black' ? 'win' : 'loss', 'White King captured!');
+                } else {
+                    endGame(gameState.playerColor === 'white' ? 'win' : 'loss', 'Black King captured!');
+                }
+                return;
+            }
+            
+            // Continue game
+            gameState.playerMove = null;
+            gameState.opponentMove = null;
+            gameState.moveSubmitted = false;
+            gameState.selectedSquare = null;
+            
+            document.getElementById('selectedMove').textContent = 'Select a piece';
+            document.getElementById('submitMoveBtn').disabled = true;
+            document.getElementById('playerStatus').innerHTML = '<i class="fas fa-chess mr-1"></i>Your Turn';
+            document.getElementById('playerStatus').className = 'px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-sm';
+            document.getElementById('opponentStatus').innerHTML = '<i class="fas fa-clock mr-1"></i>Waiting';
+            document.getElementById('opponentStatus').className = 'px-3 py-1 bg-gray-500/20 text-gray-400 rounded-full text-sm';
+            
+            renderBoard();
+            startTimer();
+        }
+
+        function updateMoveHistory() {
+            const container = document.getElementById('moveHistory');
+            if (gameState.moveHistory.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No moves yet</p>';
+            } else {
+                container.innerHTML = gameState.moveHistory.slice().reverse().map(move => 
+                    `<div class="p-2 bg-white/5 rounded text-xs">${move}</div>`
+                ).join('');
+            }
+        }
+
+        function endGame(result, reason) {
+            gameState.active = false;
+            clearInterval(gameState.timerInterval);
+            
+            const modal = document.getElementById('gameOverModal');
+            const icon = document.getElementById('gameOverIcon');
+            const title = document.getElementById('gameOverTitle');
+            const message = document.getElementById('gameOverMessage');
+            const ratingDiv = document.getElementById('ratingChange');
+            const ratingText = document.getElementById('ratingChangeText');
+            
+            if (result === 'win') {
+                icon.className = 'w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center';
+                icon.innerHTML = '<i class="fas fa-trophy text-4xl"></i>';
+                title.textContent = 'Victory!';
+                title.className = 'text-3xl font-bold mb-2 text-green-400';
+            } else if (result === 'loss') {
+                icon.className = 'w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center';
+                icon.innerHTML = '<i class="fas fa-times text-4xl"></i>';
+                title.textContent = 'Defeat';
+                title.className = 'text-3xl font-bold mb-2 text-red-400';
+            } else {
+                icon.className = 'w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center';
+                icon.innerHTML = '<i class="fas fa-handshake text-4xl"></i>';
+                title.textContent = 'Draw';
+                title.className = 'text-3xl font-bold mb-2 text-yellow-400';
+            }
+            
+            message.textContent = reason;
+            
+            // Calculate rating change for ranked games
+            if (gameState.mode === 'ranked') {
+                const change = result === 'win' ? Math.floor(15 + Math.random() * 20) : 
+                              result === 'loss' ? -Math.floor(10 + Math.random() * 15) : 0;
+                userData.rating = Math.max(100, userData.rating + change);
+                ratingDiv.classList.remove('hidden');
+                ratingText.textContent = change >= 0 ? `+${change}` : change;
+                ratingText.className = change >= 0 ? 'font-bold text-green-400' : 'font-bold text-red-400';
+                document.getElementById('playerRating').textContent = userData.rating;
+            } else {
+                ratingDiv.classList.add('hidden');
+            }
+            
+            // Record match
+            const match = {
+                id: Date.now(),
+                opponent: gameState.opponentName,
+                result: result,
+                moves: gameState.turn,
+                date: new Date().toISOString().split('T')[0],
+                color: gameState.playerColor,
+                mode: gameState.mode,
+                aiModel: gameState.aiModel
+            };
+            
+            userData.matches.unshift(match);
+            saveUserData();
+            
+            modal.classList.remove('hidden');
+        }
+
+        function offerDraw() {
+            if (gameState.mode === 'ai') {
+                // AI randomly accepts/declines
+                if (Math.random() > 0.7) {
+                    endGame('draw', 'Draw agreed');
+                } else {
+                    showToast('Draw offer declined!');
+                }
+            } else {
+                showToast('Draw offer sent...');
+                // In production, this would send to opponent
+                setTimeout(() => {
+                    if (Math.random() > 0.5) {
+                        endGame('draw', 'Draw agreed');
+                    } else {
+                        showToast('Draw offer declined');
+                    }
+                }, 1500);
+            }
+        }
+
+        function resignGame() {
+            if (confirm('Are you sure you want to resign?')) {
+                endGame('loss', 'You resigned');
+            }
+        }
+
+        function playAgain() {
+            document.getElementById('gameOverModal').classList.add('hidden');
+            if (gameState.mode === 'ai') {
+                startAIGame(gameState.aiModel);
+            } else {
+                startGame(gameState.mode, gameState.playerColor, gameState.opponentName);
+            }
+        }
+
+        function exitGame() {
+            document.getElementById('gameOverModal').classList.add('hidden');
+            document.getElementById('gameBoard').classList.add('hidden');
+            document.getElementById('gameModeSelect').classList.remove('hidden');
+            gameState.active = false;
+            clearInterval(gameState.timerInterval);
+        }
+
+        // ========== DASHBOARD FUNCTIONS ==========
+        
+        document.getElementById('quickMatchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const match = {
+                id: Date.now(),
+                opponent: document.getElementById('qOpponent').value,
+                result: document.getElementById('qResult').value,
+                moves: parseInt(document.getElementById('qMoves').value) || null,
+                date: document.getElementById('qDate').value,
+                mode: 'manual'
+            };
+            
+            userData.matches.unshift(match);
+            await saveUserData();
+            
+            e.target.reset();
+            document.getElementById('qDate').valueAsDate = new Date();
+            
+            updateDashboard();
+            showToast('Match recorded!');
+        });
+
+        function updateDashboard() {
+            const matches = userData.matches;
+            const wins = matches.filter(m => m.result === 'win').length;
+            const losses = matches.filter(m => m.result === 'loss').length;
+            const winRate = matches.length > 0 ? Math.round((wins / matches.length) * 100) : 0;
+            
+            document.getElementById('totalMatches').textContent = matches.length;
+            document.getElementById('totalWins').textContent = wins;
+            document.getElementById('totalLosses').textContent = losses;
+            document.getElementById('winRate').textContent = winRate + '%';
+            
+            renderRecentMatches();
+        }
+
+        function renderRecentMatches() {
+            const container = document.getElementById('recentMatches');
+            const recent = userData.matches.slice(0, 5);
+            
+            if (recent.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No matches recorded yet</p>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(match => `
+                <div class="match-row flex items-center justify-between p-4 rounded-xl cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center ${getResultClass(match.result)}">
+                            <i class="fas ${getResultIcon(match.result)}"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold">${escapeHtml(match.opponent)}</p>
+                            <p class="text-sm text-gray-400">${formatDate(match.date)} ${match.mode ? '• ' + match.mode : ''}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-3 py-1 rounded-full text-sm ${getResultBadge(match.result)}">${match.result.toUpperCase()}</span>
+                        ${match.moves ? `<p class="text-sm text-gray-400 mt-1">${match.moves} turns</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderMatchList() {
+            const container = document.getElementById('matchList');
+            const filterResult = document.getElementById('filterResult').value;
+            const searchText = document.getElementById('searchOpponent').value.toLowerCase();
+            
+            let filtered = userData.matches;
+            
+            if (filterResult) filtered = filtered.filter(m => m.result === filterResult);
+            if (searchText) filtered = filtered.filter(m => m.opponent.toLowerCase().includes(searchText));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No matches found</p>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map(match => `
+                <div class="match-row flex items-center justify-between p-4 rounded-xl">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center ${getResultClass(match.result)}">
+                            <i class="fas ${getResultIcon(match.result)}"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold">${escapeHtml(match.opponent)}</p>
+                            <p class="text-sm text-gray-400">${formatDate(match.date)} • ${match.mode || 'Unknown'}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-3 py-1 rounded-full text-sm ${getResultBadge(match.result)}">${match.result.toUpperCase()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('filterResult').addEventListener('change', renderMatchList);
+        document.getElementById('searchOpponent').addEventListener('input', renderMatchList);
+
+        // ========== PROFILE FUNCTIONS ==========
+        
+        function loadProfile() {
+            document.getElementById('profileName').value = userData.profile.name || '';
+            document.getElementById('profileColor').value = userData.profile.color || 'random';
+            document.getElementById('profileStyle').value = userData.profile.style || 'balanced';
+            document.getElementById('profileBio').value = userData.profile.bio || '';
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            userData.profile = {
+                name: document.getElementById('profileName').value,
+                color: document.getElementById('profileColor').value,
+                style: document.getElementById('profileStyle').value,
+                bio: document.getElementById('profileBio').value
+            };
+            
+            await saveUserData();
+            document.getElementById('displayName').textContent = userData.profile.name || 'Player';
+            showToast('Profile saved!');
+        });
+
+        function loadAchievements() {
+            const container = document.getElementById('achievements');
+            const matches = userData.matches;
+            const wins = matches.filter(m => m.result === 'win').length;
+            const aiWins = matches.filter(m => m.result === 'win' && m.mode === 'ai').length;
+            
+            const achievements = [
+                { icon: 'fa-chess-pawn', name: 'First Steps', desc: 'Play first match', unlocked: matches.length >= 1 },
+                { icon: 'fa-trophy', name: 'First Victory', desc: 'Win first match', unlocked: wins >= 1 },
+                { icon: 'fa-fire', name: 'On Fire', desc: 'Win 5 matches', unlocked: wins >= 5 },
+                { icon: 'fa-crown', name: 'Champion', desc: 'Win 25 matches', unlocked: wins >= 25 },
+                { icon: 'fa-robot', name: 'AI Slayer', desc: 'Beat 5 AI opponents', unlocked: aiWins >= 5 },
+                { icon: 'fa-bolt', name: 'Speed Demon', desc: 'Win in under 10 turns', unlocked: matches.some(m => m.result === 'win' && m.moves && m.moves < 10) },
+                { icon: 'fa-star', name: 'Veteran', desc: 'Play 50 matches', unlocked: matches.length >= 50 },
+                { icon: 'fa-brain', name: 'Mastermind', desc: 'Reach 1500 rating', unlocked: userData.rating >= 1500 }
+            ];
+            
+            container.innerHTML = achievements.map(a => `
+                <div class="p-4 rounded-xl ${a.unlocked ? 'bg-indigo-500/20 border border-indigo-500/30' : 'bg-white/5 opacity-50'}">
+                    <div class="w-10 h-10 rounded-lg ${a.unlocked ? 'bg-indigo-500' : 'bg-gray-700'} flex items-center justify-center mb-2">
+                        <i class="fas ${a.icon} ${a.unlocked ? 'text-white' : 'text-gray-500'}"></i>
+                    </div>
+                    <p class="font-semibold text-sm">${a.name}</p>
+                    <p class="text-xs text-gray-400">${a.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        // ========== STATS FUNCTIONS ==========
+        
+        function updateStats() {
+            const matches = userData.matches;
+            const wins = matches.filter(m => m.result === 'win').length;
+            const losses = matches.filter(m => m.result === 'loss').length;
+            const draws = matches.filter(m => m.result === 'draw').length;
+            const winRate = matches.length > 0 ? Math.round((wins / matches.length) * 100) : 0;
+            
+            document.getElementById('statWinRate').textContent = winRate + '%';
+            document.getElementById('winRateBar').style.width = winRate + '%';
+            document.getElementById('statWins').textContent = wins;
+            document.getElementById('statLosses').textContent = losses;
+            document.getElementById('statDraws').textContent = draws;
+            
+            // Streaks
+            let currentStreak = 0, bestStreak = 0, tempStreak = 0;
+            for (const match of [...matches].reverse()) {
+                if (match.result === 'win') { tempStreak++; bestStreak = Math.max(bestStreak, tempStreak); }
+                else { tempStreak = 0; }
+            }
+            for (const match of matches) {
+                if (match.result === 'win') currentStreak++; else break;
+            }
+            
+            document.getElementById('currentStreak').textContent = currentStreak;
+            document.getElementById('bestStreak').textContent = bestStreak;
+            
+            // Top Opponents
+            const opponentStats = {};
+            matches.forEach(m => {
+                if (!opponentStats[m.opponent]) opponentStats[m.opponent] = { games: 0, wins: 0 };
+                opponentStats[m.opponent].games++;
+                if (m.result === 'win') opponentStats[m.opponent].wins++;
+            });
+            
+            const topOpponents = Object.entries(opponentStats).sort((a, b) => b[1].games - a[1].games).slice(0, 5);
+            const opContainer = document.getElementById('topOpponents');
+            
+            if (topOpponents.length === 0) {
+                opContainer.innerHTML = '<p class="text-gray-500 text-center py-4">No opponents yet</p>';
+            } else {
+                opContainer.innerHTML = topOpponents.map(([name, stats]) => `
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                        <span class="font-medium">${escapeHtml(name)}</span>
+                        <span class="text-sm">${stats.games}G ${stats.wins}W</span>
+                    </div>
+                `).join('');
+            }
+            
+            // AI Stats
+            const aiMatches = matches.filter(m => m.mode === 'ai');
+            const aiContainer = document.getElementById('aiStats');
+            
+            if (aiMatches.length === 0) {
+                aiContainer.innerHTML = '<p class="text-gray-500 text-center py-4">No AI games yet</p>';
+            } else {
+                const aiStats = {};
+                aiMatches.forEach(m => {
+                    const model = m.aiModel || 'Unknown';
+                    if (!aiStats[model]) aiStats[model] = { games: 0, wins: 0 };
+                    aiStats[model].games++;
+                    if (m.result === 'win') aiStats[model].wins++;
+                });
+                
+                aiContainer.innerHTML = Object.entries(aiStats).map(([model, stats]) => `
+                    <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                        <span class="font-medium">${model}</span>
+                        <span class="text-sm">${stats.wins}/${stats.games} wins</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
+        
+        function getResultClass(result) {
+            return result === 'win' ? 'bg-green-500/20' : result === 'loss' ? 'bg-red-500/20' : 'bg-yellow-500/20';
+        }
+
+        function getResultIcon(result) {
+            return result === 'win' ? 'fa-trophy text-green-400' : result === 'loss' ? 'fa-times text-red-400' : 'fa-handshake text-yellow-400';
+        }
+
+        function getResultBadge(result) {
+            return result === 'win' ? 'bg-green-500/20 text-green-400' : result === 'loss' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400';
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
