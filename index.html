@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimChess - Simultaneous Move Chess</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SimChess</h1>
+            <p class="subtitle">Simultaneous Move Chess - Think ahead without seeing your opponent's moves!</p>
+        </header>
+
+        <div class="game-info">
+            <div class="turn-indicator">
+                <span id="current-turn">White's Turn</span>
+            </div>
+            <div class="game-status">
+                <span id="game-status">Select a piece to move</span>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <div class="board-wrapper">
+                <div id="chess-board" class="chess-board"></div>
+            </div>
+
+            <div class="control-panel">
+                <div class="move-input">
+                    <h3>Current Move</h3>
+                    <div id="white-move" class="move-display">
+                        <strong>White:</strong> <span id="white-move-text">No move selected</span>
+                    </div>
+                    <div id="black-move" class="move-display">
+                        <strong>Black:</strong> <span id="black-move-text">No move selected</span>
+                    </div>
+                </div>
+
+                <div class="buttons">
+                    <button id="confirm-move" class="btn btn-primary" disabled>Confirm Move</button>
+                    <button id="clear-move" class="btn btn-secondary">Clear Selection</button>
+                    <button id="submit-moves" class="btn btn-success" disabled>Submit Both Moves</button>
+                    <button id="reset-game" class="btn btn-danger">Reset Game</button>
+                </div>
+
+                <div class="instructions">
+                    <h3>How to Play</h3>
+                    <ol>
+                        <li>Each player selects their move in secret</li>
+                        <li>Click a piece, then click destination square</li>
+                        <li>Confirm your move</li>
+                        <li>When both players are ready, submit moves</li>
+                        <li>Both moves execute simultaneously!</li>
+                    </ol>
+                    <h4>Conflict Resolution</h4>
+                    <ul>
+                        <li><strong>Mutual Capture:</strong> Both pieces are removed</li>
+                        <li><strong>Square Collision:</strong> Both moves fail</li>
+                        <li><strong>Pawn vs Piece:</strong> Piece wins</li>
+                        <li><strong>Same Type:</strong> Both removed</li>
+                    </ul>
+                </div>
+
+                <div class="move-history">
+                    <h3>Move History</h3>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
