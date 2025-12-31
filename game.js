@@ -1,6 +1,6 @@
-// SimChess - Simultaneous Move Chess Game Logic
+// Simultaneous Move Chess Game Logic
 
-class SimChess {
+class SimultaneousMoveChess {
     constructor() {
         this.board = this.initializeBoard();
         this.selectedSquare = null;
@@ -289,7 +289,7 @@ class SimChess {
 // UI Controller
 class GameUI {
     constructor() {
-        this.game = new SimChess();
+        this.game = new SimultaneousMoveChess();
         this.boardElement = document.getElementById('chess-board');
         this.currentTurnElement = document.getElementById('current-turn');
         this.gameStatusElement = document.getElementById('game-status');

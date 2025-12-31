@@ -1,4 +1,4 @@
-# SimChess - Simultaneous Move Chess
+# Simultaneous Move Chess
 
 Rock Paper Scissors like take on Chess, you must not only think 24 steps ahead of your opponent but must do so without seeing their moves in advance!
 
@@ -8,7 +8,7 @@ Play the game at: [https://ludoplex.github.io/simultaneous-move-chess/](https://
 
 ## 🎯 About
 
-SimChess is a unique twist on traditional chess where both players submit their moves simultaneously. This creates exciting strategic situations where you must anticipate your opponent's moves without seeing them first!
+Simultaneous Move Chess is a unique twist on traditional chess where both players submit their moves simultaneously. This creates exciting strategic situations where you must anticipate your opponent's moves without seeing them first!
 
 ## 🎲 How to Play
 
