@@ -1144,10 +1144,25 @@
                                 <p class="text-sm text-gray-400" id="whiteStatus">Select your move</p>
                             </div>
                             <div class="chess-board max-w-md" id="whiteBoardView"></div>
-                            <div class="mt-4 text-center">
+                            <div class="mt-4 text-center w-full max-w-md">
                                 <p class="text-lg font-semibold text-white mb-2" id="whiteMove">No move selected</p>
+                                
+                                <!-- Chess Notation Input (Pokemon Stadium button style!) -->
+                                <div class="mb-3 bg-white/10 rounded-lg p-3">
+                                    <label class="text-xs text-gray-400 block mb-1">OR Type Move (e.g., e2-e4):</label>
+                                    <input type="text" id="whiteNotationInput" 
+                                        placeholder="e2-e4" maxlength="5"
+                                        onkeypress="if(event.key==='Enter') submitWhiteNotation()"
+                                        class="w-full bg-black/50 border-2 border-indigo-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl uppercase focus:outline-none focus:border-indigo-300"
+                                        style="text-transform: lowercase;">
+                                    <button onclick="submitWhiteNotation()" 
+                                        class="mt-2 px-4 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">
+                                        <i class="fas fa-keyboard mr-1"></i>Submit Notation
+                                    </button>
+                                </div>
+                                
                                 <button onclick="lockInWhiteMove()" id="whiteSubmitBtn" disabled
-                                    class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold disabled:opacity-30 hover:from-green-500 hover:to-emerald-500">
+                                    class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold disabled:opacity-30 hover:from-green-500 hover:to-emerald-500">
                                     <i class="fas fa-lock mr-2"></i>LOCK MOVE
                                 </button>
                             </div>
@@ -1169,10 +1184,25 @@
                                 <p class="text-sm text-gray-400" id="blackStatus">Select your move</p>
                             </div>
                             <div class="chess-board max-w-md" id="blackBoardView"></div>
-                            <div class="mt-4 text-center">
+                            <div class="mt-4 text-center w-full max-w-md">
                                 <p class="text-lg font-semibold text-white mb-2" id="blackMove">No move selected</p>
+                                
+                                <!-- Chess Notation Input (Pokemon Stadium button style!) -->
+                                <div class="mb-3 bg-white/10 rounded-lg p-3">
+                                    <label class="text-xs text-gray-400 block mb-1">OR Type Move (e.g., e7-e5):</label>
+                                    <input type="text" id="blackNotationInput" 
+                                        placeholder="e7-e5" maxlength="5"
+                                        onkeypress="if(event.key==='Enter') submitBlackNotation()"
+                                        class="w-full bg-black/50 border-2 border-purple-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl uppercase focus:outline-none focus:border-purple-300"
+                                        style="text-transform: lowercase;">
+                                    <button onclick="submitBlackNotation()" 
+                                        class="mt-2 px-4 py-1 bg-purple-600 hover:bg-purple-500 rounded text-sm">
+                                        <i class="fas fa-keyboard mr-1"></i>Submit Notation
+                                    </button>
+                                </div>
+                                
                                 <button onclick="lockInBlackMove()" id="blackSubmitBtn" disabled
-                                    class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold disabled:opacity-30 hover:from-green-500 hover:to-emerald-500">
+                                    class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold disabled:opacity-30 hover:from-green-500 hover:to-emerald-500">
                                     <i class="fas fa-lock mr-2"></i>LOCK MOVE
                                 </button>
                             </div>
@@ -1306,6 +1336,7 @@
             if (!gameState.whitePlayerMove) return;
             gameState.whiteMoveLocked = true;
             document.getElementById('whiteSubmitBtn').disabled = true;
+            document.getElementById('whiteNotationInput').disabled = true;
             document.getElementById('whiteStatus').textContent = '✓ MOVE LOCKED';
             renderSplitBoard('white');
             checkBothMovesLocked();
@@ -1315,10 +1346,82 @@
             if (!gameState.blackPlayerMove) return;
             gameState.blackMoveLocked = true;
             document.getElementById('blackSubmitBtn').disabled = true;
+            document.getElementById('blackNotationInput').disabled = true;
             document.getElementById('blackStatus').textContent = '✓ MOVE LOCKED';
             renderSplitBoard('black');
             checkBothMovesLocked();
         };
+        
+        // Pokemon Stadium-style notation input (like pressing A/B buttons!)
+        window.submitWhiteNotation = function() {
+            const input = document.getElementById('whiteNotationInput');
+            const notation = input.value.toLowerCase().trim();
+            const move = parseChessNotation(notation, 'white');
+            
+            if (move) {
+                gameState.whitePlayerMove = move;
+                gameState.whiteSelectedSquare = null;
+                const moveText = `${PIECES[move.piece]} ${notation}`;
+                document.getElementById('whiteMove').textContent = moveText;
+                document.getElementById('whiteSubmitBtn').disabled = false;
+                input.value = '';
+                input.style.borderColor = '#4ade80'; // Green flash
+                setTimeout(() => { input.style.borderColor = '#6366f1'; }, 500);
+                renderSplitBoard('white');
+            } else {
+                input.style.borderColor = '#ef4444'; // Red flash
+                setTimeout(() => { input.style.borderColor = '#6366f1'; }, 500);
+                showToast('Invalid move notation!', 'error');
+            }
+        };
+        
+        window.submitBlackNotation = function() {
+            const input = document.getElementById('blackNotationInput');
+            const notation = input.value.toLowerCase().trim();
+            const move = parseChessNotation(notation, 'black');
+            
+            if (move) {
+                gameState.blackPlayerMove = move;
+                gameState.blackSelectedSquare = null;
+                const moveText = `${PIECES[move.piece]} ${notation}`;
+                document.getElementById('blackMove').textContent = moveText;
+                document.getElementById('blackSubmitBtn').disabled = false;
+                input.value = '';
+                input.style.borderColor = '#4ade80'; // Green flash
+                setTimeout(() => { input.style.borderColor = '#a855f7'; }, 500);
+                renderSplitBoard('black');
+            } else {
+                input.style.borderColor = '#ef4444'; // Red flash
+                setTimeout(() => { input.style.borderColor = '#a855f7'; }, 500);
+                showToast('Invalid move notation!', 'error');
+            }
+        };
+        
+        function parseChessNotation(notation, color) {
+            // Parse notation like "e2-e4" or "e2e4"
+            const match = notation.match(/([a-h])([1-8])[-\s]?([a-h])([1-8])/);
+            if (!match) return null;
+            
+            const fromCol = match[1].charCodeAt(0) - 97; // a=0, b=1, etc.
+            const fromRow = 8 - parseInt(match[2]); // 8=0, 7=1, etc.
+            const toCol = match[3].charCodeAt(0) - 97;
+            const toRow = 8 - parseInt(match[4]);
+            
+            const piece = gameState.board[fromRow][fromCol];
+            if (!piece) return null;
+            if (piece[0] !== color[0]) return null; // Wrong color
+            
+            // Validate the move
+            const moves = getValidMoves(fromRow, fromCol);
+            const isValid = moves.some(m => m.row === toRow && m.col === toCol);
+            if (!isValid) return null;
+            
+            return {
+                from: { row: fromRow, col: fromCol },
+                to: { row: toRow, col: toCol },
+                piece: piece
+            };
+        }
         
         function checkBothMovesLocked() {
             if (gameState.whiteMoveLocked && gameState.blackMoveLocked) {
