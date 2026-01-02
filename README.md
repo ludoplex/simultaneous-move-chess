@@ -124,6 +124,35 @@ Camera Referee Mode is perfect for organized tournaments:
 - Easy to stream and record
 - Professional presentation
 
+## 🧪 Testing
+
+This project includes a comprehensive test suite:
+
+```bash
+# Install dependencies
+npm install
+
+# Run all tests
+npm run test:all
+
+# Run unit tests
+npm test
+
+# Run E2E tests
+npm run test:e2e
+
+# Run with coverage
+npm test -- --coverage
+```
+
+**Test Coverage:**
+- Unit tests for game logic (move validation, collision resolution)
+- Integration tests for component interaction
+- E2E tests for complete user workflows
+- Accessibility and performance tests
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation.
+
 ## 📝 License
 
 This project is open source and available for anyone to use and modify.

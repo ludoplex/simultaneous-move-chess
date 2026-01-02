@@ -1,1 +1,9 @@
 test_game.html
+node_modules/
+coverage/
+playwright-report/
+test-results/
+.playwright/
+*.log
+.DS_Store
+
