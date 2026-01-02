@@ -82,13 +82,21 @@ When both players' moves interact:
 
 ## 🛠️ Technology
 
-- HTML5, CSS3, JavaScript (ES6+)
-- Tailwind CSS for styling
-- Puter.js for AI integration
+**Single-File Application:**
+- Everything in one `index.html` file (153KB)
+- All HTML, CSS, and JavaScript inline
+- Puter.js loaded from CDN
+- Tailwind CSS loaded from CDN
+- No external JS/CSS files
+- No npm dependencies
+- No build process
+- Perfect for GitHub Pages
+
+**Features:**
 - Camera API for mobile referee mode
 - OCR for move detection (camera mode)
-- No build process required
-- Hosted on GitHub Pages
+- Split-screen with CSS transforms
+- Responsive design
 
 ## 🚀 Local Development
 
