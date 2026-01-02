@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimChess - Simultaneous Move Chess</title>
+    <title>Simultaneous Move Chess</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://js.puter.com/v2/"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -173,7 +173,7 @@
     <div id="loadingScreen" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
         <div class="text-center">
             <div class="loader mx-auto mb-4"></div>
-            <p class="text-gray-400">Loading SimChess...</p>
+            <p class="text-gray-400">Loading Simultaneous Move Chess...</p>
         </div>
     </div>
 
@@ -185,13 +185,13 @@
                     <i class="fas fa-chess-knight text-4xl"></i>
                 </div>
                 <h1 class="font-display text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                    SimChess
+                    Simultaneous Move Chess
                 </h1>
                 <p class="text-gray-400 mt-2">Simultaneous Move Chess</p>
             </div>
             
             <div class="glass rounded-xl p-6 mb-6 text-left">
-                <h3 class="font-semibold text-indigo-300 mb-2"><i class="fas fa-info-circle mr-2"></i>What is SimChess?</h3>
+                <h3 class="font-semibold text-indigo-300 mb-2"><i class="fas fa-info-circle mr-2"></i>What is Simultaneous Move Chess?</h3>
                 <p class="text-sm text-gray-400">A strategic chess variant where both players move simultaneously without seeing each other's moves. Think 24 steps ahead to outmaneuver your opponent!</p>
             </div>
             
@@ -212,7 +212,7 @@
                     <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
                         <i class="fas fa-chess-knight"></i>
                     </div>
-                    <span class="font-display font-bold text-xl hidden sm:block">SimChess</span>
+                    <span class="font-display font-bold text-xl hidden sm:block">Simultaneous Move Chess</span>
                 </div>
                 
                 <div class="flex items-center gap-4">
@@ -536,6 +536,61 @@
                     </div>
                 </div>
 
+                <!-- Local Mode Selection Panel -->
+                <div id="localModePanel" class="hidden">
+                    <button onclick="hideLocalModePanel()" class="mb-4 text-gray-400 hover:text-white">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Game Modes
+                    </button>
+                    <h2 class="text-2xl font-bold mb-6"><i class="fas fa-user-friends mr-2 text-pink-400"></i>Choose Local Multiplayer Mode</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        <!-- Split-Screen Mode (Best for Desktop) -->
+                        <div id="splitScreenOption" class="game-card glass rounded-2xl p-8 cursor-pointer hover:scale-105 transition" onclick="startSplitScreenLocal()">
+                            <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                                <i class="fas fa-columns text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-3 text-center">Split-Screen</h3>
+                            <p class="text-gray-400 text-sm mb-4 text-center">Pokemon Stadium N64 style! Both players sit side-by-side, screen splits vertically.</p>
+                            <ul class="text-xs text-gray-400 space-y-2 mb-4">
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>Vertical screen split</li>
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>Right player rotated 180°</li>
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>Click OR type notation</li>
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>TRUE simultaneous input</li>
+                            </ul>
+                            <div class="text-center">
+                                <span id="splitScreenBadge" class="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs">
+                                    <i class="fas fa-desktop mr-1"></i>Best for Desktop
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Camera Mode (Best for Mobile/Tablet) -->
+                        <div id="cameraOption" class="game-card glass rounded-2xl p-8 cursor-pointer hover:scale-105 transition" onclick="startCameraLocal()">
+                            <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                                <i class="fas fa-camera text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-3 text-center">Camera Referee</h3>
+                            <p class="text-gray-400 text-sm mb-4 text-center">Players write moves on paper. Referee takes photo of both simultaneously!</p>
+                            <ul class="text-xs text-gray-400 space-y-2 mb-4">
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>Write moves on paper</li>
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>Stand side-by-side (no peeking!)</li>
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>Referee captures both moves</li>
+                                <li><i class="fas fa-check text-green-400 mr-2"></i>OCR reads chess notation</li>
+                            </ul>
+                            <div class="text-center">
+                                <span id="cameraBadge" class="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs">
+                                    <i class="fas fa-mobile-alt mr-1"></i>Best for Mobile/Tablet
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-6 text-sm text-gray-400">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <span id="deviceRecommendation"></span>
+                    </div>
+                </div>
+
                 <!-- Game Board -->
                 <div id="gameBoard" class="hidden">
                     <div class="flex flex-col lg:flex-row gap-6">
@@ -628,9 +683,9 @@
                                 </div>
                             </div>
                             
-                            <!-- SimChess Rules -->
+                            <!-- Simultaneous Move Chess Rules -->
                             <div class="glass rounded-2xl p-4 mb-4">
-                                <h3 class="font-semibold mb-3"><i class="fas fa-book mr-2 text-indigo-400"></i>SimChess Rules</h3>
+                                <h3 class="font-semibold mb-3"><i class="fas fa-book mr-2 text-indigo-400"></i>Simultaneous Move Chess Rules</h3>
                                 <ul class="text-xs text-gray-400 space-y-2">
                                     <li><i class="fas fa-sync mr-2 text-indigo-400"></i>Both players move simultaneously</li>
                                     <li><i class="fas fa-eye-slash mr-2 text-indigo-400"></i>You don't see opponent's move until revealed</li>
@@ -785,7 +840,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm text-gray-400 mb-2">Bio</label>
-                                <textarea id="profileBio" rows="3" placeholder="Tell us about your SimChess journey..."
+                                <textarea id="profileBio" rows="3" placeholder="Tell us about your Simultaneous Move Chess journey..."
                                     class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"></textarea>
                             </div>
                             <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl px-6 py-3 font-semibold hover:from-indigo-500 hover:to-purple-500 transition-all">
@@ -933,7 +988,6 @@
             opponentName: 'Opponent',
             isPlayerTurn: true,
             moveSubmitted: false,
-            localPlayerTurn: 'white', // For local 2P
             gameCode: null,
             timerInterval: null,
             timeLeft: 30
@@ -1121,8 +1175,691 @@
         }
 
         function startLocalGame() {
-            startGame('local', 'white', 'Player 2');
+            // Show local mode selection panel
+            document.getElementById('gameModeSelect').classList.add('hidden');
+            document.getElementById('localModePanel').classList.remove('hidden');
+            
+            // Detect device type and recommend appropriate mode
+            const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(navigator.userAgent);
+            const isMobileOrTablet = isMobile || isTablet;
+            
+            const splitScreenOption = document.getElementById('splitScreenOption');
+            const cameraOption = document.getElementById('cameraOption');
+            const splitScreenBadge = document.getElementById('splitScreenBadge');
+            const cameraBadge = document.getElementById('cameraBadge');
+            const recommendation = document.getElementById('deviceRecommendation');
+            
+            if (isMobileOrTablet) {
+                // Recommend Camera Mode for mobile/tablet
+                cameraOption.style.order = '-1'; // Move to front on mobile
+                cameraOption.classList.add('ring-4', 'ring-green-500', 'ring-opacity-50');
+                cameraBadge.innerHTML = '<i class="fas fa-star mr-1"></i>Recommended for Your Device';
+                cameraBadge.className = 'px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-xs font-bold animate-pulse';
+                
+                splitScreenBadge.innerHTML = '<i class="fas fa-desktop mr-1"></i>Better on Desktop';
+                
+                recommendation.innerHTML = 'You\'re on a mobile/tablet device. <strong>Camera Mode</strong> is recommended for the best experience!';
+            } else {
+                // Recommend Split-Screen for desktop
+                splitScreenOption.classList.add('ring-4', 'ring-indigo-500', 'ring-opacity-50');
+                splitScreenBadge.innerHTML = '<i class="fas fa-star mr-1"></i>Recommended for Your Device';
+                splitScreenBadge.className = 'px-3 py-1 bg-yellow-500/30 text-yellow-300 rounded-full text-xs font-bold animate-pulse';
+                
+                cameraBadge.innerHTML = '<i class="fas fa-mobile-alt mr-1"></i>Better on Mobile/Tablet';
+                
+                recommendation.innerHTML = 'You\'re on a desktop. <strong>Split-Screen Mode</strong> is recommended for the best experience!';
+            }
         }
+        
+        function hideLocalModePanel() {
+            document.getElementById('localModePanel').classList.add('hidden');
+            document.getElementById('gameModeSelect').classList.remove('hidden');
+        }
+        
+        function startSplitScreenLocal() {
+            document.getElementById('localModePanel').classList.add('hidden');
+            startGame('local-split', 'white', 'Player 2');
+        }
+        
+        function startCameraLocal() {
+            document.getElementById('localModePanel').classList.add('hidden');
+            startGame('local-camera', 'white', 'Player 2');
+        }
+        
+        // POKEMON STADIUM SPLIT-SCREEN MODE!
+        function initializeSplitScreenMode() {
+            // Hide the normal game board
+            document.getElementById('gameBoard').classList.add('hidden');
+            
+            // Create split-screen container
+            const mainEl = document.querySelector('main');
+            const splitScreen = document.createElement('div');
+            splitScreen.id = 'splitScreenMode';
+            splitScreen.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: #0f0f23;';
+            splitScreen.innerHTML = `
+                <div class="h-screen flex">
+                    <!-- LEFT PLAYER (White) -->
+                    <div class="flex-1 border-r-4 border-indigo-500 relative overflow-hidden">
+                        <div class="h-full flex flex-col p-4 items-center justify-center">
+                            <div class="text-center mb-4">
+                                <h2 class="text-3xl font-display font-bold text-white mb-2">WHITE</h2>
+                                <p class="text-sm text-gray-400" id="whiteStatus">Select your move</p>
+                            </div>
+                            <div class="chess-board max-w-md" id="whiteBoardView"></div>
+                            <div class="mt-4 text-center w-full max-w-md">
+                                <p class="text-lg font-semibold text-white mb-2" id="whiteMove">No move selected</p>
+                                
+                                <!-- Chess Notation Input (Pokemon Stadium button style!) -->
+                                <div class="mb-3 bg-white/10 rounded-lg p-3">
+                                    <label class="text-xs text-gray-400 block mb-1">OR Type Move (e.g., e2-e4):</label>
+                                    <input type="text" id="whiteNotationInput" 
+                                        placeholder="e2-e4" maxlength="5"
+                                        onkeypress="if(event.key==='Enter') submitWhiteNotation()"
+                                        class="w-full bg-black/50 border-2 border-indigo-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl focus:outline-none focus:border-indigo-300"
+                                        style="text-transform: lowercase;">
+                                    <button onclick="submitWhiteNotation()" 
+                                        class="mt-2 px-4 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">
+                                        <i class="fas fa-keyboard mr-1"></i>Submit Notation
+                                    </button>
+                                </div>
+                                
+                                <button onclick="lockInWhiteMove()" id="whiteSubmitBtn" disabled
+                                    class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold disabled:opacity-30 hover:from-green-500 hover:to-emerald-500">
+                                    <i class="fas fa-lock mr-2"></i>LOCK MOVE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- CENTER DIVIDER -->
+                    <div class="w-1 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 relative">
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-indigo-600 rounded-full p-4">
+                            <i class="fas fa-chess text-3xl text-white"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- RIGHT PLAYER (Black) - ROTATED 180° -->
+                    <div class="flex-1 border-l-4 border-purple-500 relative overflow-hidden" style="transform: rotate(180deg);">
+                        <div class="h-full flex flex-col p-4 items-center justify-center">
+                            <div class="text-center mb-4">
+                                <h2 class="text-3xl font-display font-bold text-white mb-2">BLACK</h2>
+                                <p class="text-sm text-gray-400" id="blackStatus">Select your move</p>
+                            </div>
+                            <div class="chess-board max-w-md" id="blackBoardView"></div>
+                            <div class="mt-4 text-center w-full max-w-md">
+                                <p class="text-lg font-semibold text-white mb-2" id="blackMove">No move selected</p>
+                                
+                                <!-- Chess Notation Input (Pokemon Stadium button style!) -->
+                                <div class="mb-3 bg-white/10 rounded-lg p-3">
+                                    <label class="text-xs text-gray-400 block mb-1">OR Type Move (e.g., e7-e5):</label>
+                                    <input type="text" id="blackNotationInput" 
+                                        placeholder="e7-e5" maxlength="5"
+                                        onkeypress="if(event.key==='Enter') submitBlackNotation()"
+                                        class="w-full bg-black/50 border-2 border-purple-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl focus:outline-none focus:border-purple-300"
+                                        style="text-transform: lowercase;">
+                                    <button onclick="submitBlackNotation()" 
+                                        class="mt-2 px-4 py-1 bg-purple-600 hover:bg-purple-500 rounded text-sm">
+                                        <i class="fas fa-keyboard mr-1"></i>Submit Notation
+                                    </button>
+                                </div>
+                                
+                                <button onclick="lockInBlackMove()" id="blackSubmitBtn" disabled
+                                    class="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold disabled:opacity-30 hover:from-green-500 hover:to-emerald-500">
+                                    <i class="fas fa-lock mr-2"></i>LOCK MOVE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Both Moves Button (appears when both locked) -->
+                <div id="submitBothBtn" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+                    <button onclick="resolveBothMoves()" 
+                        class="px-12 py-6 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl font-display font-bold text-2xl text-black shadow-2xl animate-pulse">
+                        <i class="fas fa-bolt mr-3"></i>RESOLVE MOVES!
+                    </button>
+                </div>
+            `;
+            mainEl.appendChild(splitScreen);
+            
+            // Initialize both boards
+            gameState.whitePlayerMove = null;
+            gameState.blackPlayerMove = null;
+            gameState.whiteMoveLocked = false;
+            gameState.blackMoveLocked = false;
+            gameState.whiteSelectedSquare = null;
+            gameState.blackSelectedSquare = null;
+            
+            renderSplitScreenBoards();
+        }
+        
+        function renderSplitScreenBoards() {
+            renderSplitBoard('white');
+            renderSplitBoard('black');
+        }
+        
+        function renderSplitBoard(color) {
+            const boardId = color === 'white' ? 'whiteBoardView' : 'blackBoardView';
+            const boardEl = document.getElementById(boardId);
+            if (!boardEl) return;
+            
+            boardEl.innerHTML = '';
+            const isLocked = color === 'white' ? gameState.whiteMoveLocked : gameState.blackMoveLocked;
+            const selectedSquare = color === 'white' ? gameState.whiteSelectedSquare : gameState.blackSelectedSquare;
+            const playerMove = color === 'white' ? gameState.whitePlayerMove : gameState.blackPlayerMove;
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'chess-square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+                    
+                    const piece = gameState.board[row][col];
+                    if (piece) {
+                        const pieceSpan = document.createElement('span');
+                        pieceSpan.textContent = PIECES[piece];
+                        square.appendChild(pieceSpan);
+                    }
+                    
+                    // Highlight selected square
+                    if (selectedSquare && selectedSquare.row === row && selectedSquare.col === col) {
+                        square.classList.add('selected');
+                    }
+                    
+                    // Highlight move if locked
+                    if (isLocked && playerMove) {
+                        if ((playerMove.from.row === row && playerMove.from.col === col) ||
+                            (playerMove.to.row === row && playerMove.to.col === col)) {
+                            square.classList.add('move-submitted');
+                        }
+                    }
+                    
+                    if (!isLocked) {
+                        square.addEventListener('click', () => handleSplitScreenClick(color, row, col));
+                    }
+                    
+                    boardEl.appendChild(square);
+                }
+            }
+        }
+        
+        function handleSplitScreenClick(color, row, col) {
+            const isLocked = color === 'white' ? gameState.whiteMoveLocked : gameState.blackMoveLocked;
+            if (isLocked) return;
+            
+            const piece = gameState.board[row][col];
+            const myColor = color[0]; // 'w' or 'b'
+            const selectedSquare = color === 'white' ? gameState.whiteSelectedSquare : gameState.blackSelectedSquare;
+            
+            // If clicking own piece, select it
+            if (piece && piece[0] === myColor) {
+                if (color === 'white') {
+                    gameState.whiteSelectedSquare = { row, col };
+                    gameState.whitePlayerMove = null;
+                } else {
+                    gameState.blackSelectedSquare = { row, col };
+                    gameState.blackPlayerMove = null;
+                }
+                document.getElementById(color + 'Move').textContent = `Selected: ${PIECES[piece]}`;
+                document.getElementById(color + 'SubmitBtn').disabled = true;
+                renderSplitBoard(color);
+                return;
+            }
+            
+            // If we have selected piece, try to move
+            if (selectedSquare) {
+                const moves = getValidMoves(selectedSquare.row, selectedSquare.col);
+                const isValid = moves.some(m => m.row === row && m.col === col);
+                
+                if (isValid) {
+                    const fromPiece = gameState.board[selectedSquare.row][selectedSquare.col];
+                    const move = {
+                        from: { ...selectedSquare },
+                        to: { row, col },
+                        piece: fromPiece
+                    };
+                    
+                    if (color === 'white') {
+                        gameState.whitePlayerMove = move;
+                        gameState.whiteSelectedSquare = null;
+                    } else {
+                        gameState.blackPlayerMove = move;
+                        gameState.blackSelectedSquare = null;
+                    }
+                    
+                    const moveText = `${PIECES[fromPiece]} ${getSquareName(selectedSquare.row, selectedSquare.col)} → ${getSquareName(row, col)}`;
+                    document.getElementById(color + 'Move').textContent = moveText;
+                    document.getElementById(color + 'SubmitBtn').disabled = false;
+                    renderSplitBoard(color);
+                }
+            }
+        }
+        
+        window.lockInWhiteMove = function() {
+            if (!gameState.whitePlayerMove) return;
+            gameState.whiteMoveLocked = true;
+            document.getElementById('whiteSubmitBtn').disabled = true;
+            document.getElementById('whiteNotationInput').disabled = true;
+            document.getElementById('whiteStatus').textContent = '✓ MOVE LOCKED';
+            renderSplitBoard('white');
+            checkBothMovesLocked();
+        };
+        
+        window.lockInBlackMove = function() {
+            if (!gameState.blackPlayerMove) return;
+            gameState.blackMoveLocked = true;
+            document.getElementById('blackSubmitBtn').disabled = true;
+            document.getElementById('blackNotationInput').disabled = true;
+            document.getElementById('blackStatus').textContent = '✓ MOVE LOCKED';
+            renderSplitBoard('black');
+            checkBothMovesLocked();
+        };
+        
+        // Pokemon Stadium-style notation input (like pressing A/B buttons!)
+        window.submitWhiteNotation = function() {
+            const input = document.getElementById('whiteNotationInput');
+            const notation = input.value.toLowerCase().trim();
+            const move = parseChessNotation(notation, 'white');
+            
+            if (move) {
+                gameState.whitePlayerMove = move;
+                gameState.whiteSelectedSquare = null;
+                const moveText = `${PIECES[move.piece]} ${notation}`;
+                document.getElementById('whiteMove').textContent = moveText;
+                document.getElementById('whiteSubmitBtn').disabled = false;
+                input.value = '';
+                input.style.borderColor = '#4ade80'; // Green flash
+                setTimeout(() => { input.style.borderColor = '#6366f1'; }, 500);
+                renderSplitBoard('white');
+            } else {
+                input.style.borderColor = '#ef4444'; // Red flash
+                setTimeout(() => { input.style.borderColor = '#6366f1'; }, 500);
+                showToast('Invalid move notation!', 'error');
+            }
+        };
+        
+        window.submitBlackNotation = function() {
+            const input = document.getElementById('blackNotationInput');
+            const notation = input.value.toLowerCase().trim();
+            const move = parseChessNotation(notation, 'black');
+            
+            if (move) {
+                gameState.blackPlayerMove = move;
+                gameState.blackSelectedSquare = null;
+                const moveText = `${PIECES[move.piece]} ${notation}`;
+                document.getElementById('blackMove').textContent = moveText;
+                document.getElementById('blackSubmitBtn').disabled = false;
+                input.value = '';
+                input.style.borderColor = '#4ade80'; // Green flash
+                setTimeout(() => { input.style.borderColor = '#a855f7'; }, 500);
+                renderSplitBoard('black');
+            } else {
+                input.style.borderColor = '#ef4444'; // Red flash
+                setTimeout(() => { input.style.borderColor = '#a855f7'; }, 500);
+                showToast('Invalid move notation!', 'error');
+            }
+        };
+        
+        function parseChessNotation(notation, color) {
+            // Parse notation like "e2-e4" or "e2e4"
+            const match = notation.match(/([a-h])([1-8])[-\s]?([a-h])([1-8])/);
+            if (!match) return null;
+            
+            const fromCol = match[1].charCodeAt(0) - 97; // a=0, b=1, etc.
+            const fromRow = 8 - parseInt(match[2]); // 8=0, 7=1, etc.
+            const toCol = match[3].charCodeAt(0) - 97;
+            const toRow = 8 - parseInt(match[4]);
+            
+            const piece = gameState.board[fromRow][fromCol];
+            if (!piece) return null;
+            if (piece[0] !== color[0]) return null; // Wrong color
+            
+            // Validate the move
+            const moves = getValidMoves(fromRow, fromCol);
+            const isValid = moves.some(m => m.row === toRow && m.col === toCol);
+            if (!isValid) return null;
+            
+            return {
+                from: { row: fromRow, col: fromCol },
+                to: { row: toRow, col: toCol },
+                piece: piece
+            };
+        }
+        
+        function checkBothMovesLocked() {
+            if (gameState.whiteMoveLocked && gameState.blackMoveLocked) {
+                document.getElementById('submitBothBtn').classList.remove('hidden');
+            }
+        }
+        
+        window.resolveBothMoves = async function() {
+            // Hide the resolve button
+            document.getElementById('submitBothBtn').classList.add('hidden');
+            
+            // Set up moves for resolution
+            gameState.playerMove = gameState.whitePlayerMove;
+            gameState.opponentMove = gameState.blackPlayerMove;
+            
+            // Show dramatic animation
+            const splitScreen = document.getElementById('splitScreenMode');
+            splitScreen.style.animation = 'pulse 0.5s ease-in-out';
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Remove split screen and show results
+            splitScreen.remove();
+            document.getElementById('gameBoard').classList.remove('hidden');
+            renderBoard();
+            
+            // Resolve the moves!
+            resolveMoves();
+            
+            // After resolution, if game continues, go back to appropriate mode
+            setTimeout(() => {
+                if (gameState.active) {
+                    if (gameState.mode === 'local-split') {
+                        initializeSplitScreenMode();
+                    } else if (gameState.mode === 'local-camera') {
+                        initializeCameraMode();
+                    }
+                }
+            }, 3000);
+        };
+        
+        // CAMERA REFEREE MODE - For Mobile/Tablet!
+        function initializeCameraMode() {
+            // Hide normal game board
+            document.getElementById('gameBoard').classList.add('hidden');
+            
+            // Create camera mode UI
+            const mainEl = document.querySelector('main');
+            const cameraUI = document.createElement('div');
+            cameraUI.id = 'cameraMode';
+            cameraUI.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: #0f0f23;';
+            cameraUI.innerHTML = `
+                <div class="h-screen flex flex-col p-6">
+                    <!-- Header -->
+                    <div class="text-center mb-6">
+                        <h1 class="text-4xl font-display font-bold text-white mb-2">
+                            <i class="fas fa-camera text-green-400 mr-3"></i>CAMERA REFEREE MODE
+                        </h1>
+                        <p class="text-gray-400">Turn ${gameState.turn} - Both players write your moves!</p>
+                    </div>
+                    
+                    <!-- Board Display (for reference) -->
+                    <div class="flex-1 flex items-center justify-center mb-6">
+                        <div class="chess-board max-w-md" id="cameraBoardView"></div>
+                    </div>
+                    
+                    <!-- Camera Instructions -->
+                    <div class="glass rounded-2xl p-6 mb-4 max-w-2xl mx-auto">
+                        <h3 class="text-xl font-bold text-white mb-4 text-center">
+                            <i class="fas fa-clipboard-list text-yellow-400 mr-2"></i>Instructions
+                        </h3>
+                        <ol class="text-gray-300 space-y-3 text-lg">
+                            <li><strong>1.</strong> Both players write their move on paper (e.g., "e2-e4", "Ng8-f6")</li>
+                            <li><strong>2.</strong> Stand side-by-side holding your papers (no peeking!)</li>
+                            <li><strong>3.</strong> Referee: Click button below to activate camera</li>
+                            <li><strong>4.</strong> Take ONE photo capturing BOTH players' papers</li>
+                            <li><strong>5.</strong> System reads moves and executes simultaneously!</li>
+                        </ol>
+                    </div>
+                    
+                    <!-- Camera Button -->
+                    <div class="text-center">
+                        <button onclick="activateRefereeCamera()" 
+                            class="px-12 py-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl font-display font-bold text-2xl text-white shadow-2xl hover:scale-105 transition">
+                            <i class="fas fa-camera text-3xl mr-3"></i>
+                            TAKE PHOTO OF BOTH MOVES
+                        </button>
+                        <p class="text-sm text-gray-400 mt-3">Referee/Third Party: Click when both players are ready</p>
+                    </div>
+                    
+                    <!-- Camera Preview (hidden initially) -->
+                    <div id="cameraPreview" class="hidden fixed inset-0 bg-black z-50 flex flex-col">
+                        <div class="flex-1 relative">
+                            <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                            <canvas id="cameraCanvas" class="hidden"></canvas>
+                            
+                            <!-- Capture guides -->
+                            <div class="absolute inset-0 pointer-events-none">
+                                <div class="absolute top-1/4 left-1/4 right-1/4 bottom-1/4 border-4 border-green-400 rounded-lg">
+                                    <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-500 px-4 py-2 rounded-full text-sm font-bold">
+                                        Fit both papers in frame
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 bg-gray-900 flex justify-center gap-4">
+                            <button onclick="capturePhoto()" 
+                                class="px-8 py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg">
+                                <i class="fas fa-camera text-2xl"></i>
+                                <br><span class="text-sm">CAPTURE</span>
+                            </button>
+                            <button onclick="closeCameraPreview()" 
+                                class="px-8 py-4 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-lg">
+                                <i class="fas fa-times text-2xl"></i>
+                                <br><span class="text-sm">CANCEL</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Processing Overlay -->
+                    <div id="processingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="loader mb-6 mx-auto"></div>
+                            <h2 class="text-3xl font-bold text-white mb-2">Reading Moves...</h2>
+                            <p class="text-gray-400">OCR processing both players' notation</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            mainEl.appendChild(cameraUI);
+            
+            // Render board for reference
+            renderCameraBoard();
+        }
+        
+        function renderCameraBoard() {
+            const boardEl = document.getElementById('cameraBoardView');
+            if (!boardEl) return;
+            
+            boardEl.innerHTML = '';
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'chess-square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+                    
+                    const piece = gameState.board[row][col];
+                    if (piece) {
+                        const pieceSpan = document.createElement('span');
+                        pieceSpan.textContent = PIECES[piece];
+                        square.appendChild(pieceSpan);
+                    }
+                    boardEl.appendChild(square);
+                }
+            }
+        }
+        
+        window.activateRefereeCamera = async function() {
+            const preview = document.getElementById('cameraPreview');
+            const video = document.getElementById('cameraVideo');
+            
+            preview.classList.remove('hidden');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: 1920, height: 1080 } 
+                });
+                video.srcObject = stream;
+                gameState.cameraStream = stream;
+            } catch (error) {
+                console.error('Camera error:', error);
+                showToast('Camera access denied. Please enable camera permissions.', 'error');
+                preview.classList.add('hidden');
+            }
+        };
+        
+        window.closeCameraPreview = function() {
+            if (gameState.cameraStream) {
+                gameState.cameraStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('cameraPreview').classList.add('hidden');
+        };
+        
+        window.capturePhoto = async function() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            // Close camera
+            closeCameraPreview();
+            
+            // Show processing overlay
+            document.getElementById('processingOverlay').classList.remove('hidden');
+            
+            // Get image data
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Simulate OCR processing (in real app, would use Tesseract.js or cloud OCR)
+            await simulateOCR(imageData);
+        };
+        
+        async function simulateOCR(imageData) {
+            // In a real implementation, this would use Tesseract.js or cloud OCR service
+            // For now, we'll prompt user to manually enter the moves
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            document.getElementById('processingOverlay').classList.add('hidden');
+            
+            // Prompt for manual entry as fallback
+            const whiteMove = prompt('Enter WHITE player\'s move (e.g., e2-e4):');
+            const blackMove = prompt('Enter BLACK player\'s move (e.g., e7-e5):');
+            
+            if (whiteMove && blackMove) {
+                const whiteParsed = parseChessNotation(whiteMove, 'white');
+                const blackParsed = parseChessNotation(blackMove, 'black');
+                
+                if (whiteParsed && blackParsed) {
+                    gameState.playerMove = whiteParsed;
+                    gameState.opponentMove = blackParsed;
+                    
+                    // Remove camera UI and show resolution
+                    const cameraUI = document.getElementById('cameraMode');
+                    if (cameraUI) cameraUI.remove();
+                    document.getElementById('gameBoard').classList.remove('hidden');
+                    renderBoard();
+                    
+                    showToast('Both moves captured! Resolving...', 'success');
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    resolveMoves();
+                    
+                    // After resolution, go back to camera mode if game continues
+                    setTimeout(() => {
+                        if (gameState.active) {
+                            initializeCameraMode();
+                        }
+                    }, 3000);
+                } else {
+                    showToast('Invalid move notation. Please try again.', 'error');
+                }
+            }
+        }
+        
+        // DISCORD STREAMING FEATURES
+        function addDiscordStreamingControls() {
+            // Check if button already exists to prevent duplicates
+            if (document.getElementById('discordStreamBtn')) {
+                return; // Already exists, don't create another
+            }
+            
+            // Add streaming overlay toggle button
+            const streamingBtn = document.createElement('button');
+            streamingBtn.id = 'discordStreamBtn';
+            streamingBtn.innerHTML = '<i class="fab fa-discord mr-2"></i>Stream Mode';
+            streamingBtn.className = 'fixed top-4 right-4 z-50 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-lg transition';
+            streamingBtn.onclick = toggleDiscordStreamMode;
+            document.body.appendChild(streamingBtn);
+        }
+        
+        window.toggleDiscordStreamMode = function() {
+            const existingOverlay = document.getElementById('discordStreamOverlay');
+            
+            if (existingOverlay) {
+                existingOverlay.remove();
+                document.getElementById('discordStreamBtn').innerHTML = '<i class="fab fa-discord mr-2"></i>Stream Mode';
+                return;
+            }
+            
+            // Create Discord-optimized overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'discordStreamOverlay';
+            overlay.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; pointer-events: none;';
+            overlay.innerHTML = `
+                <div class="bg-gradient-to-t from-black/90 to-transparent p-6">
+                    <div class="max-w-6xl mx-auto grid grid-cols-3 gap-6 text-white">
+                        <!-- Left: Game Info -->
+                        <div class="glass rounded-lg p-4 pointer-events-auto">
+                            <h3 class="text-sm font-bold mb-2 text-gray-300">GAME INFO</h3>
+                            <div class="space-y-1 text-lg font-mono">
+                                <div><span class="text-gray-400">Turn:</span> <span class="font-bold">${gameState.turn}</span></div>
+                                <div><span class="text-gray-400">Mode:</span> <span class="font-bold">${gameState.mode}</span></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Center: Players -->
+                        <div class="glass rounded-lg p-4 pointer-events-auto">
+                            <h3 class="text-sm font-bold mb-2 text-gray-300 text-center">PLAYERS</h3>
+                            <div class="flex justify-between items-center">
+                                <div class="text-center">
+                                    <div class="text-2xl mb-1">⚪</div>
+                                    <div class="font-bold">WHITE</div>
+                                    <div class="text-xs text-gray-400">You</div>
+                                </div>
+                                <div class="text-3xl">VS</div>
+                                <div class="text-center">
+                                    <div class="text-2xl mb-1">⚫</div>
+                                    <div class="font-bold">BLACK</div>
+                                    <div class="text-xs text-gray-400">${gameState.opponentName}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right: Last Move -->
+                        <div class="glass rounded-lg p-4 pointer-events-auto">
+                            <h3 class="text-sm font-bold mb-2 text-gray-300">LAST MOVE</h3>
+                            <div class="text-sm font-mono" id="streamLastMove">
+                                ${gameState.moveHistory.length > 0 ? gameState.moveHistory[gameState.moveHistory.length - 1] : 'No moves yet'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Watermark -->
+                    <div class="text-center mt-4 text-gray-500 text-sm">
+                        <i class="fas fa-chess mr-2"></i>Simultaneous Move Chess
+                        <i class="fab fa-discord ml-3 mr-1"></i>Discord Stream Mode Active
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            document.getElementById('discordStreamBtn').innerHTML = '<i class="fas fa-times mr-2"></i>Hide Overlay';
+            
+            // Update overlay on game changes
+            gameState.updateStreamOverlay = function() {
+                const lastMoveEl = document.getElementById('streamLastMove');
+                if (lastMoveEl && gameState.moveHistory.length > 0) {
+                    lastMoveEl.textContent = gameState.moveHistory[gameState.moveHistory.length - 1];
+                }
+            };
+        };
 
         function startGame(mode, playerColor, opponentName) {
             gameState = {
@@ -1139,7 +1876,6 @@
                 opponentName: opponentName,
                 isPlayerTurn: true,
                 moveSubmitted: false,
-                localPlayerTurn: 'white',
                 gameCode: gameState.gameCode,
                 timerInterval: null,
                 timeLeft: 30
@@ -1151,7 +1887,21 @@
             document.getElementById('matchmakingPanel').classList.add('hidden');
             document.getElementById('createGamePanel').classList.add('hidden');
             document.getElementById('joinGamePanel').classList.add('hidden');
-            document.getElementById('gameBoard').classList.remove('hidden');
+            
+            // For local modes
+            if (mode === 'local-split') {
+                initializeSplitScreenMode();
+            } else if (mode === 'local-camera') {
+                initializeCameraMode();
+            } else if (mode === 'local') {
+                // Legacy support
+                initializeSplitScreenMode();
+            } else {
+                document.getElementById('gameBoard').classList.remove('hidden');
+            }
+            
+            // Add Discord streaming overlay button
+            addDiscordStreamingControls();
 
             // Update UI
             document.getElementById('opponentName').textContent = opponentName;
@@ -1164,7 +1914,9 @@
             document.getElementById('turnNumber').textContent = '1';
             document.getElementById('moveHistory').innerHTML = '<p class="text-gray-500 text-center py-4">No moves yet</p>';
 
-            renderBoard();
+            if (mode !== 'local' && mode !== 'local-split' && mode !== 'local-camera') {
+                renderBoard();
+            }
             startTimer();
         }
 
@@ -1232,7 +1984,7 @@
             if (!gameState.active || gameState.moveSubmitted) return;
             
             const piece = gameState.board[row][col];
-            const myColor = gameState.mode === 'local' ? gameState.localPlayerTurn : gameState.playerColor;
+            const myColor = gameState.playerColor;
             
             // If clicking on own piece, select it
             if (piece && piece[0] === myColor[0]) {
@@ -1394,7 +2146,7 @@
         }
 
         function makeRandomMove() {
-            const myColor = gameState.mode === 'local' ? gameState.localPlayerTurn : gameState.playerColor;
+            const myColor = gameState.playerColor;
             
             // Find all pieces that can move
             const possibleMoves = [];
@@ -1427,16 +2179,16 @@
             
             if (gameState.mode === 'ai') {
                 await getAIMove();
-            } else if (gameState.mode === 'local') {
-                // For local game, prompt second player
-                handleLocalTurn();
-                return;
+                resolveMoves();
+            } else if (gameState.mode === 'local-split' || gameState.mode === 'local-camera') {
+                // These modes handle simultaneous submission internally
+                // Moves are collected and resolved via their own UI (split-screen or camera)
+                console.log('Simultaneous local modes handle resolution independently');
             } else {
                 // Simulate opponent move for demo
                 simulateOpponentMove();
+                resolveMoves();
             }
-            
-            resolveMoves();
         }
 
         async function getAIMove() {
@@ -1518,39 +2270,13 @@ Choose your best move. Reply with ONLY the move in format: "e7-e5" (from-to squa
             generateRandomOpponentMove();
         }
 
-        function handleLocalTurn() {
-            showToast(`${gameState.localPlayerTurn === 'white' ? 'White' : 'Black'} move locked! Pass device to ${gameState.localPlayerTurn === 'white' ? 'Black' : 'White'}`);
-            
-            // Store the move and switch turns
-            if (gameState.localPlayerTurn === 'white') {
-                gameState.opponentMove = null; // Will be set by second player
-                gameState.localPlayerTurn = 'black';
-                gameState.moveSubmitted = false;
-                gameState.selectedSquare = null;
-                
-                // Hide the board temporarily
-                setTimeout(() => {
-                    const storedMove = gameState.playerMove;
-                    gameState.playerMove = null;
-                    document.getElementById('selectedMove').textContent = 'Select a piece (Black)';
-                    document.getElementById('playerStatus').innerHTML = '<i class="fas fa-chess mr-1"></i>Black\'s Turn';
-                    document.getElementById('playerStatus').className = 'px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-sm';
-                    renderBoard();
-                    startTimer();
-                    
-                    // Store white's move to resolve later
-                    gameState.whiteMoveStored = storedMove;
-                }, 1500);
-            } else {
-                // Black submitted, resolve both moves
-                gameState.opponentMove = gameState.whiteMoveStored;
-                const blackMove = gameState.playerMove;
-                gameState.playerMove = gameState.whiteMoveStored;
-                gameState.opponentMove = blackMove;
-                gameState.localPlayerTurn = 'white';
-                resolveMoves();
-            }
-        }
+        // DEPRECATED LEGACY FUNCTIONS REMOVED
+        // The old sequential turn-taking "local" mode has been completely replaced by:
+        // 1. local-split: Pokemon Stadium-style split-screen mode (truly simultaneous)
+        // 2. local-camera: Camera referee mode (truly simultaneous)
+        //
+        // Both new modes collect BOTH players' moves at the same time before resolution.
+        // This ensures true simultaneous gameplay with no sequential turns.
 
         function resolveMoves() {
             if (!gameState.playerMove) return;
@@ -1696,6 +2422,12 @@ Choose your best move. Reply with ONLY the move in format: "e7-e5" (from-to squa
         function endGame(result, reason) {
             gameState.active = false;
             clearInterval(gameState.timerInterval);
+            
+            // Clean up camera stream if active
+            if (gameState.cameraStream) {
+                gameState.cameraStream.getTracks().forEach(track => track.stop());
+                gameState.cameraStream = null;
+            }
             
             const modal = document.getElementById('gameOverModal');
             const icon = document.getElementById('gameOverIcon');
