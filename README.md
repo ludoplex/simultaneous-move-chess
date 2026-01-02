@@ -1,5 +1,7 @@
 # Simultaneous Move Chess
 
+![Tests](https://github.com/ludoplex/simultaneous-move-chess/actions/workflows/test.yml/badge.svg)
+
 Rock Paper Scissors-like take on Chess, you must not only think 24 steps ahead of your opponent but must do so without seeing their moves in advance!
 
 ## 🎮 Play Online
@@ -126,7 +128,7 @@ Camera Referee Mode is perfect for organized tournaments:
 
 ## 🧪 Testing
 
-This project includes a comprehensive test suite:
+This project includes a comprehensive test suite with **automatic CI/CD**:
 
 ```bash
 # Install dependencies
@@ -151,7 +153,13 @@ npm test -- --coverage
 - E2E tests for complete user workflows
 - Accessibility and performance tests
 
-See [TESTING.md](./TESTING.md) for detailed testing documentation.
+**Continuous Integration:**
+- ✅ Tests run automatically on all PRs
+- ✅ Multiple browsers and devices tested
+- ✅ Coverage reports and PR comments
+- ✅ Status checks required before merge
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation and [CI.md](./CI.md) for CI/CD configuration.
 
 ## 📝 License
 
