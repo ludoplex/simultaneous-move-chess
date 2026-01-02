@@ -29,7 +29,7 @@ The game automatically detects your device and recommends the best mode:
 - Both players write moves on paper
 - Stand side-by-side (can't see each other's notes)
 - Referee/third party takes ONE photo of both papers
-- OCR automatically reads chess notation
+- Referee enters both moves into the app (OCR planned for future release)
 - Perfect for tournaments and Discord streaming!
 
 ### 2. **AI Mode** - Play Against AI
@@ -94,7 +94,7 @@ When both players' moves interact:
 
 **Features:**
 - Camera API for mobile referee mode
-- OCR for move detection (camera mode)
+- Manual move entry (OCR integration planned)
 - Split-screen with CSS transforms
 - Responsive design
 

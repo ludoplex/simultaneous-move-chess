@@ -988,7 +988,6 @@
             opponentName: 'Opponent',
             isPlayerTurn: true,
             moveSubmitted: false,
-            localPlayerTurn: 'white', // For local 2P
             gameCode: null,
             timerInterval: null,
             timeLeft: 30
@@ -1181,7 +1180,7 @@
             document.getElementById('localModePanel').classList.remove('hidden');
             
             // Detect device type and recommend appropriate mode
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const isTablet = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(navigator.userAgent);
             const isMobileOrTablet = isMobile || isTablet;
             
@@ -1257,7 +1256,7 @@
                                     <input type="text" id="whiteNotationInput" 
                                         placeholder="e2-e4" maxlength="5"
                                         onkeypress="if(event.key==='Enter') submitWhiteNotation()"
-                                        class="w-full bg-black/50 border-2 border-indigo-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl uppercase focus:outline-none focus:border-indigo-300"
+                                        class="w-full bg-black/50 border-2 border-indigo-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl focus:outline-none focus:border-indigo-300"
                                         style="text-transform: lowercase;">
                                     <button onclick="submitWhiteNotation()" 
                                         class="mt-2 px-4 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm">
@@ -1297,7 +1296,7 @@
                                     <input type="text" id="blackNotationInput" 
                                         placeholder="e7-e5" maxlength="5"
                                         onkeypress="if(event.key==='Enter') submitBlackNotation()"
-                                        class="w-full bg-black/50 border-2 border-purple-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl uppercase focus:outline-none focus:border-purple-300"
+                                        class="w-full bg-black/50 border-2 border-purple-400 rounded-lg px-4 py-2 text-white text-center font-mono text-xl focus:outline-none focus:border-purple-300"
                                         style="text-transform: lowercase;">
                                     <button onclick="submitBlackNotation()" 
                                         class="mt-2 px-4 py-1 bg-purple-600 hover:bg-purple-500 rounded text-sm">
@@ -1776,6 +1775,11 @@
         
         // DISCORD STREAMING FEATURES
         function addDiscordStreamingControls() {
+            // Check if button already exists to prevent duplicates
+            if (document.getElementById('discordStreamBtn')) {
+                return; // Already exists, don't create another
+            }
+            
             // Add streaming overlay toggle button
             const streamingBtn = document.createElement('button');
             streamingBtn.id = 'discordStreamBtn';
@@ -1872,7 +1876,6 @@
                 opponentName: opponentName,
                 isPlayerTurn: true,
                 moveSubmitted: false,
-                localPlayerTurn: 'white',
                 gameCode: gameState.gameCode,
                 timerInterval: null,
                 timeLeft: 30
@@ -1981,7 +1984,7 @@
             if (!gameState.active || gameState.moveSubmitted) return;
             
             const piece = gameState.board[row][col];
-            const myColor = gameState.mode === 'local' ? gameState.localPlayerTurn : gameState.playerColor;
+            const myColor = gameState.playerColor;
             
             // If clicking on own piece, select it
             if (piece && piece[0] === myColor[0]) {
@@ -2143,7 +2146,7 @@
         }
 
         function makeRandomMove() {
-            const myColor = gameState.mode === 'local' ? gameState.localPlayerTurn : gameState.playerColor;
+            const myColor = gameState.playerColor;
             
             // Find all pieces that can move
             const possibleMoves = [];
@@ -2177,9 +2180,10 @@
             if (gameState.mode === 'ai') {
                 await getAIMove();
                 resolveMoves();
-            } else if (gameState.mode === 'local') {
-                // For local game, TRULY simultaneous - hide everything and get second player's move
-                await handleLocalSimultaneousMove();
+            } else if (gameState.mode === 'local-split' || gameState.mode === 'local-camera') {
+                // These modes handle simultaneous submission internally
+                // Moves are collected and resolved via their own UI (split-screen or camera)
+                console.log('Simultaneous local modes handle resolution independently');
             } else {
                 // Simulate opponent move for demo
                 simulateOpponentMove();
@@ -2266,119 +2270,13 @@ Choose your best move. Reply with ONLY the move in format: "e7-e5" (from-to squa
             generateRandomOpponentMove();
         }
 
-        async function handleLocalSimultaneousMove() {
-            // Store first player's move
-            const firstPlayerMove = gameState.playerMove;
-            const firstPlayerColor = gameState.localPlayerTurn;
-            
-            // Show transition overlay - completely hide everything
-            const mainContainer = document.querySelector('main');
-            const overlay = document.createElement('div');
-            overlay.id = 'player-transition-overlay';
-            overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0f0f23; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 9999;';
-            overlay.innerHTML = `
-                <div class="text-center">
-                    <i class="fas fa-exchange-alt text-8xl text-indigo-400 mb-6 animate-pulse"></i>
-                    <h2 class="text-4xl font-display font-bold text-white mb-4">
-                        ${firstPlayerColor === 'white' ? 'White' : 'Black'} Move Submitted
-                    </h2>
-                    <p class="text-2xl text-gray-300 mb-8">
-                        Pass device to ${firstPlayerColor === 'white' ? 'Black' : 'White'} player
-                    </p>
-                    <div class="bg-yellow-500/20 border-2 border-yellow-500 rounded-lg p-6 mb-6 max-w-md">
-                        <i class="fas fa-eye-slash text-3xl text-yellow-400 mb-3"></i>
-                        <p class="text-yellow-200 font-semibold">
-                            IMPORTANT: The board will be shown fresh.<br>
-                            You will NOT see the previous player's move!
-                        </p>
-                    </div>
-                    <button onclick="startSecondPlayerTurn()" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xl transition transform hover:scale-105">
-                        <i class="fas fa-eye mr-2"></i>
-                        I'm Ready - Show Board
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-            
-            // Store the first player's move securely
-            gameState.firstPlayerMoveStored = firstPlayerMove;
-            gameState.firstPlayerColorStored = firstPlayerColor;
-        }
-        
-        window.startSecondPlayerTurn = function() {
-            // Remove overlay
-            const overlay = document.getElementById('player-transition-overlay');
-            if (overlay) overlay.remove();
-            
-            // Switch to second player
-            gameState.localPlayerTurn = gameState.firstPlayerColorStored === 'white' ? 'black' : 'white';
-            gameState.moveSubmitted = false;
-            gameState.selectedSquare = null;
-            gameState.playerMove = null;
-            
-            // Update UI for second player
-            document.getElementById('selectedMove').textContent = `Select a piece (${gameState.localPlayerTurn === 'white' ? 'White' : 'Black'})`;
-            document.getElementById('playerStatus').innerHTML = `<i class="fas fa-chess mr-1"></i>${gameState.localPlayerTurn === 'white' ? 'White' : 'Black'}'s Turn`;
-            document.getElementById('playerStatus').className = 'px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-full text-sm';
-            document.getElementById('submitMoveBtn').disabled = true;
-            
-            // Render board fresh (without showing first player's move)
-            renderBoard();
-            startTimer();
-            
-            // Mark that we're waiting for second player
-            gameState.waitingForSecondPlayer = true;
-        };
-        
-        // Override submitMove for second player in local mode
-        const originalSubmitMove = submitMove;
-        window.submitMoveSecondPlayer = async function() {
-            if (!gameState.playerMove) return;
-            
-            // We now have both moves!
-            const secondPlayerMove = gameState.playerMove;
-            const firstPlayerMove = gameState.firstPlayerMoveStored;
-            
-            gameState.moveSubmitted = true;
-            clearInterval(gameState.timerInterval);
-            
-            document.getElementById('playerStatus').innerHTML = '<i class="fas fa-check mr-1"></i>Move Locked';
-            document.getElementById('playerStatus').className = 'px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm';
-            document.getElementById('submitMoveBtn').disabled = true;
-            
-            // Set up moves for resolution
-            if (gameState.firstPlayerColorStored === 'white') {
-                gameState.playerMove = firstPlayerMove;
-                gameState.opponentMove = secondPlayerMove;
-            } else {
-                gameState.playerMove = secondPlayerMove;
-                gameState.opponentMove = firstPlayerMove;
-            }
-            
-            // Reset local player turn to white for next round
-            gameState.localPlayerTurn = 'white';
-            gameState.waitingForSecondPlayer = false;
-            
-            // Small delay to show both moves locked
-            showToast('Both moves locked! Resolving...');
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // Now resolve the moves simultaneously!
-            resolveMoves();
-        };
-        
-        function handleLocalTurn() {
-            // This function is now deprecated - keeping for compatibility
-            console.warn('handleLocalTurn called but should use handleLocalSimultaneousMove');
-        }
-        
-        function revealBoardForBlack() {
-            // Deprecated - replaced by startSecondPlayerTurn
-            console.warn('revealBoardForBlack called but should use startSecondPlayerTurn');
-            if (window.startSecondPlayerTurn) {
-                window.startSecondPlayerTurn();
-            }
-        }
+        // DEPRECATED LEGACY FUNCTIONS REMOVED
+        // The old sequential turn-taking "local" mode has been completely replaced by:
+        // 1. local-split: Pokemon Stadium-style split-screen mode (truly simultaneous)
+        // 2. local-camera: Camera referee mode (truly simultaneous)
+        //
+        // Both new modes collect BOTH players' moves at the same time before resolution.
+        // This ensures true simultaneous gameplay with no sequential turns.
 
         function resolveMoves() {
             if (!gameState.playerMove) return;
@@ -2524,6 +2422,12 @@ Choose your best move. Reply with ONLY the move in format: "e7-e5" (from-to squa
         function endGame(result, reason) {
             gameState.active = false;
             clearInterval(gameState.timerInterval);
+            
+            // Clean up camera stream if active
+            if (gameState.cameraStream) {
+                gameState.cameraStream.getTracks().forEach(track => track.stop());
+                gameState.cameraStream = null;
+            }
             
             const modal = document.getElementById('gameOverModal');
             const icon = document.getElementById('gameOverIcon');
